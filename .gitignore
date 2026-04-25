@@ -1,0 +1,32 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Environment variables (never commit secrets)
+.env
+.env.local
+.env.*.local
+
+# Editor / OS / Claude Code
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
+.claude/
+
+# Server — user-uploaded content (event posters, protocol PDFs, etc.)
+server/uploads/
+
+# SQLite databases (local dev only)
+*.db
+*.db-journal
+*.sqlite
+*.sqlite-journal

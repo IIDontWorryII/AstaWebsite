@@ -1,0 +1,33 @@
+{
+  "compilerOptions": {
+    /* Compile target — "es2023" = modern JavaScript features. */
+    "target": "es2023",
+    "lib": ["es2023"],
+
+    /* Module system — "nodenext" = Node.js ESM rules. */
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+
+    /* Strictness — catches more bugs at compile time. */
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+
+    /* Interop — lets us `import express from 'express'` cleanly. */
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "forceConsistentCasingInFileNames": true,
+
+    /* Types — include Node.js global types (process, Buffer, etc.). */
+    "types": ["node"],
+
+    /* Output — where compiled JS goes when we later run `tsc` for production.
+       rootDir is ".." because we include files from ../shared/ too. */
+    "rootDir": "..",
+    "outDir": "dist"
+  },
+  "include": ["**/*.ts", "../shared/**/*.ts"],
+  "exclude": ["node_modules", "dist"]
+}
