@@ -1,20 +1,11 @@
-/* Minimal reset — Tailwind CSS will replace this in Step 5. */
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-}
+@import "tailwindcss";
 
-html,
-body {
-  margin: 0;
-  padding: 0;
-}
-
-body {
-  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  color: #111;
-  background: #fff;
-  line-height: 1.5;
-  -webkit-font-smoothing: antialiased;
+/* Brand palette — extend Tailwind's default theme with AStA Remagen tokens.
+   Use as: bg-asta-red, text-asta-red, border-asta-red, etc.
+   Adjust hex values once we eyedrop the exact reds from the design source. */
+@theme {
+  --color-asta-red: #b5232c;
+  --color-asta-red-dark: #8c1a22;
+  --color-asta-ink: #111111;
+  --color-asta-paper: #ffffff;
 }
