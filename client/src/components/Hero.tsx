@@ -35,7 +35,7 @@ export default function Hero() {
         {/* Right: image */}
         <div>
           <img
-            src="/hero-campus.jpg"
+            src="/hero-campus.png"
             alt="RheinAhrCampus Remagen"
             className="w-full h-auto rounded-2xl object-cover"
           />

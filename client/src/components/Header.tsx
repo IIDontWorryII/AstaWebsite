@@ -6,7 +6,11 @@ export default function Header() {
       <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
         {/*Left: logo */}
         <a href="#">
-          <img src="/logo.png" alt="AStA Remagen" className="h-16 w-auto" />
+          <img
+            src="/asta-logo.png"
+            alt="AStA Remagen"
+            className="h-16 w-auto"
+          />
         </a>
 
         {/*Center:  primary nav */}
