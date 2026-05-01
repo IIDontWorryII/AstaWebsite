@@ -1,14 +1,17 @@
 import Header from "./components/Header";
 import Hero from "./components/Hero";
+import EventsSection from "./components/EventsSection";
+import Footer from "./components/Footer";
 
 function App() {
   return (
     <div>
       <Header />
-      <Hero />
-      <main
-        style={{ padding: "2rem", fontFamily: "system-ui, sans-serif" }}
-      ></main>
+      <main>
+        <Hero />
+        <EventsSection />
+      </main>
+      <Footer />
     </div>
   );
 }
