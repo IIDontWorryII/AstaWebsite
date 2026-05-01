@@ -4,7 +4,7 @@
    Use as: bg-asta-red, text-asta-red, border-asta-red, etc.
    Adjust hex values once we eyedrop the exact reds from the design source. */
 @theme {
-  --color-asta-red: #991915;
+  --color-asta-red: #9d1006;
   --color-asta-red-dark: #63140f;
   --color-asta-ink: #111111;
   --color-asta-paper: #ffffff;
