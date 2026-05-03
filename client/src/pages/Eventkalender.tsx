@@ -1,4 +1,4 @@
-// client/src/pages/Eventkalender
+// client/src/pages/Eventkalender.tsx
 
 export default function Eventkalender() {
   return (
