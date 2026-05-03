@@ -2,6 +2,18 @@
 
 import { Link, NavLink } from "react-router-dom";
 
+const navLinkClass = ({ isActive }: { isActive: boolean }) =>
+  `font-medium pb-1 ${isActive ? "text-asta-red border-b-2 border-asta-red" : "hover:text-asta-red"}`;
+
+const navItems = [
+  { to: "/", label: "Home", end: true },
+  { to: "/gremien", label: "Gremien" },
+  { to: "/eventkalender", label: "Eventkalender" },
+  { to: "/baracke", label: "BaRACke" },
+  { to: "/sport", label: "Sport" },
+  { to: "/kontakt", label: "Kontakt" },
+];
+
 export default function Header() {
   return (
     <header className="sticky top-0 bg-white border-b border-gray-200 z-50">
@@ -17,55 +29,16 @@ export default function Header() {
 
         {/*Center:  primary nav */}
         <nav className="hidden md:flex gap-8">
-          <NavLink
-            to="/"
-            end
-            className={({ isActive }) =>
-              `font-medium pb-1 ${isActive ? "text-asta-red border-b-2 border-asta-red" : "hover:text-asta-red"}`
-            }
-          >
-            Home
-          </NavLink>
-          <NavLink
-            to="/gremien"
-            className={({ isActive }) =>
-              `font-medium pb-1 ${isActive ? "text-asta-red border-b-2 border-asta-red" : "hover:text-asta-red"}`
-            }
-          >
-            Gremien
-          </NavLink>
-          <NavLink
-            to="/eventkalender"
-            className={({ isActive }) =>
-              `font-medium pb-1 ${isActive ? "text-asta-red border-b-2 border-asta-red" : "hover:text-asta-red"}`
-            }
-          >
-            Eventkalender
-          </NavLink>
-          <NavLink
-            to="/baracke"
-            className={({ isActive }) =>
-              `font-medium pb-1 ${isActive ? "text-asta-red border-b-2 border-asta-red" : "hover:text-asta-red"}`
-            }
-          >
-            BaRACke
-          </NavLink>
-          <NavLink
-            to="/sport"
-            className={({ isActive }) =>
-              `font-medium pb-1 ${isActive ? "text-asta-red border-b-2 border-asta-red" : "hover:text-asta-red"}`
-            }
-          >
-            Sport
-          </NavLink>
-          <NavLink
-            to="/kontakt"
-            className={({ isActive }) =>
-              `font-medium pb-1 ${isActive ? "text-asta-red border-b-2 border-asta-red" : "hover:text-asta-red"}`
-            }
-          >
-            Kontakt
-          </NavLink>
+          {navItems.map((item) => (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              end={item.end}
+              className={navLinkClass}
+            >
+              {item.label}
+            </NavLink>
+          ))}
         </nav>
 
         {/* Right: CTA + icons */}
