@@ -1,41 +1,71 @@
 // client/src/components/Header.tsx
 
+import { Link, NavLink } from "react-router-dom";
+
 export default function Header() {
   return (
     <header className="sticky top-0 bg-white border-b border-gray-200 z-50">
       <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
         {/*Left: logo */}
-        <a href="#">
+        <Link to="/">
           <img
             src="/asta-logo.png"
             alt="AStA Remagen"
             className="h-16 w-auto"
           />
-        </a>
+        </Link>
 
         {/*Center:  primary nav */}
         <nav className="hidden md:flex gap-8">
-          <a
-            href="#"
-            className="font-medium text-asta-red border-b-2 border-asta-red pb-1"
+          <NavLink
+            to="/"
+            end
+            className={({ isActive }) =>
+              `font-medium pb-1 ${isActive ? "text-asta-red border-b-2 border-asta-red" : "hover:text-asta-red"}`
+            }
           >
             Home
-          </a>
-          <a href="#" className="font-medium hover:text-asta-red">
+          </NavLink>
+          <NavLink
+            to="/gremien"
+            className={({ isActive }) =>
+              `font-medium pb-1 ${isActive ? "text-asta-red border-b-2 border-asta-red" : "hover:text-asta-red"}`
+            }
+          >
             Gremien
-          </a>
-          <a href="#" className="font-medium hover:text-asta-red">
+          </NavLink>
+          <NavLink
+            to="/eventkalender"
+            className={({ isActive }) =>
+              `font-medium pb-1 ${isActive ? "text-asta-red border-b-2 border-asta-red" : "hover:text-asta-red"}`
+            }
+          >
             Eventkalender
-          </a>
-          <a href="#" className="font-medium hover:text-asta-red">
+          </NavLink>
+          <NavLink
+            to="/baracke"
+            className={({ isActive }) =>
+              `font-medium pb-1 ${isActive ? "text-asta-red border-b-2 border-asta-red" : "hover:text-asta-red"}`
+            }
+          >
             BaRACke
-          </a>
-          <a href="#" className="font-medium hover:text-asta-red">
+          </NavLink>
+          <NavLink
+            to="/sport"
+            className={({ isActive }) =>
+              `font-medium pb-1 ${isActive ? "text-asta-red border-b-2 border-asta-red" : "hover:text-asta-red"}`
+            }
+          >
             Sport
-          </a>
-          <a href="#" className="font-medium hover:text-asta-red">
+          </NavLink>
+          <NavLink
+            to="/kontakt"
+            className={({ isActive }) =>
+              `font-medium pb-1 ${isActive ? "text-asta-red border-b-2 border-asta-red" : "hover:text-asta-red"}`
+            }
+          >
             Kontakt
-          </a>
+          </NavLink>
         </nav>
 
         {/* Right: CTA + icons */}
