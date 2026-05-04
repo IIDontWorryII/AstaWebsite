@@ -1,5 +1,7 @@
 // client/src/components/Hero.tsx
 
+import { Button } from "@/components/ui/button";
+
 export default function Hero() {
   return (
     <section className="bg-[url(/hero-campus.png)] bg-[size:100%_blank] bg-no-repeat bg-right rounded-br-[6rem]">
@@ -10,18 +12,12 @@ export default function Hero() {
         </h1>
 
         <div className="mt-8 flex flex-wrap gap-4">
-          <a
-            href="#"
-            className="bg-asta-red hover:bg-asta-red-dark text-white px-6 py-3 rounded-md font-medium"
-          >
-            Über den AStA
-          </a>
-          <a
-            href="#"
-            className="border-2 border-asta-red text-asta-red hover:bg-asta-red hover:text-white px-6 py-3 rounded-md font-medium"
-          >
+          <Button size="brand" render={<a href="#" />}>
+            <a href="#">Über den AStA</a>
+          </Button>
+          <Button variant="brandOutline" size="brand" render={<a href="#" />}>
             Mitmachen
-          </a>
+          </Button>
         </div>
       </div>
     </section>
