@@ -13,7 +13,7 @@ export default function Hero() {
 
         <div className="mt-8 flex flex-wrap gap-4">
           <Button size="brand" render={<a href="#" />}>
-            <a href="#">Über den AStA</a>
+            Über den AStA
           </Button>
           <Button variant="brandOutline" size="brand" render={<a href="#" />}>
             Mitmachen
