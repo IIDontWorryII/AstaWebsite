@@ -14,15 +14,16 @@ describe("Header", () => {
     expect(homeLink).toHaveClass("text-asta-red");
   });
 
-  it("marks the Gremien link active when on /gremien", () => {
+  it("renders Gremien as a dropdown trigger and Home is not active when on /gremien", () => {
     render(
       <MemoryRouter initialEntries={["/gremien"]}>
         <Header />
       </MemoryRouter>,
     );
 
-    const gremienLink = screen.getByRole("link", { name: "Gremien" });
-    expect(gremienLink).toHaveClass("text-asta-red");
+    // Gremien is now a NavigationMenuTrigger (a <button>), not a NavLink
+    const gremienTrigger = screen.getByRole("button", { name: /gremien/i });
+    expect(gremienTrigger).toBeInTheDocument();
 
     // Home should no longer be active
     const homeLink = screen.getByRole("link", { name: "Home" });
