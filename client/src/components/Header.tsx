@@ -27,26 +27,27 @@ const gremienSections = [
     title: "ASTA",
     href: "/gremien/asta",
     items: [
-      { title: "Info", href: "/gremien/asta/info" },
-      { title: "Referate", href: "/gremien/asta/referate" },
-      { title: "Protokolle", href: "/gremien/asta/protokolle" },
+      { title: "Info", href: "/gremien/asta#info" },
+      { title: "Referate", href: "/gremien/asta#referate" },
+      { title: "Protokolle", href: "/gremien/asta#protokolle" },
     ],
   },
   {
     title: "STUPA",
     href: "/gremien/stupa",
     items: [
-      { title: "Info", href: "/gremien/stupa/info" },
-      { title: "Mitglieder", href: "/gremien/stupa/mitglieder" },
-      { title: "Protokolle", href: "/gremien/stupa/protokolle" },
+      { title: "Info", href: "/gremien/stupa#info" },
+      { title: "Mitglieder", href: "/gremien/stupa#mitglieder" },
+      { title: "Protokolle", href: "/gremien/stupa#protokolle" },
     ],
   },
   {
     title: "FACHSCHAFTEN",
     href: "/gremien/fachschaften",
     items: [
-      { title: "MIT", href: "/gremien/fachschaften/mit" },
-      { title: "WISO", href: "/gremien/fachschaften/wiso" },
+      { title: "Info", href: "/gremien/fachschaften#info" },
+      { title: "MIT", href: "/gremien/fachschaften#mit" },
+      { title: "WISO", href: "/gremien/fachschaften#wiso" },
     ],
   },
 ];
