@@ -14,8 +14,6 @@ const navLinkClass = ({ isActive }: { isActive: boolean }) =>
   `font-medium pb-1 ${isActive ? "text-asta-red border-b-2 border-asta-red" : "hover:text-asta-red"}`;
 
 const navItems = [
-  // { to: "/", label: "Home", end: true },
-  // { to: "/gremien", label: "Gremien" },
   { to: "/eventkalender", label: "Eventkalender" },
   { to: "/baracke", label: "BaRACke" },
   { to: "/sport", label: "Sport" },

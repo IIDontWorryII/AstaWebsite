@@ -7,6 +7,9 @@ import Baracke from "./pages/Baracke";
 import Sport from "./pages/Sport";
 import Kontakt from "./pages/Kontakt";
 import NotFound from "./pages/NotFound";
+import Asta from "./pages/gremien/Asta";
+import Stupa from "./pages/gremien/Stupa";
+import Fachschaften from "./pages/gremien/Fachschaften";
 
 function App() {
   return (
@@ -14,6 +17,9 @@ function App() {
       <Route element={<Layout />}>
         <Route path="/" element={<Home />} />
         <Route path="/gremien" element={<Gremien />} />
+        <Route path="/gremien/asta" element={<Asta />} />
+        <Route path="/gremien/stupa" element={<Stupa />} />
+        <Route path="/gremien/fachschaften" element={<Fachschaften />} />
         <Route path="/eventkalender" element={<Eventkalender />} />
         <Route path="/baracke" element={<Baracke />} />
         <Route path="/sport" element={<Sport />} />
