@@ -12,4 +12,12 @@ export default defineConfig({
       '@': path.resolve(import.meta.dirname, './src'),
     },
   },
+  server: {
+    proxy: {
+      // Forward /api/* requests to the backend during dev.
+      // Frontend code uses relative URLs (fetch("/api/events")) so it works
+      // identically in dev and prod (where frontend + backend share an origin).
+      '/api': 'http://localhost:5000',
+    },
+  },
 })
