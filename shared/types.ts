@@ -9,19 +9,31 @@
  * - EDITOR — Can create/edit events, pages, members, protocols, Getränkekarte,
  *            sport files. Can also promote/demote other users.
  */
-export type UserRole = 'USER' | 'EDITOR'
+export type UserRole = "USER" | "EDITOR";
 
 /** Shape of a user as exposed by the API (no password hash). */
 export interface PublicUser {
-  id: string
-  email: string
-  displayName: string
-  role: UserRole
-  createdAt: string // ISO 8601
+  id: string;
+  email: string;
+  displayName: string;
+  role: UserRole;
+  createdAt: string; // ISO 8601
 }
 
 /** Response shape for GET /api/health. */
 export interface HealthResponse {
-  status: 'ok'
-  version: string
+  status: "ok";
+  version: string;
+}
+
+export interface EventDTO {
+  id: string;
+  title: string;
+  description: string;
+  imageUrl: string | null;
+  price: string | null;
+  place: string;
+  startsAt: string;
+  createdAt: string;
+  updatedAt: string;
 }
