@@ -26,6 +26,30 @@ const events = [
   },
 ];
 
+const protocols = [
+  {
+    id: "protocol-asta-2026-04-15",
+    gremium: "ASTA",
+    title: "AStA-Sitzung — Sommerfest-Planung",
+    meetingDate: new Date("2026-04-15"),
+    fileUrl: "/uploads/protocols/asta-2026-04-15.pdf",
+  },
+  {
+    id: "protocol-asta-2026-04-01",
+    gremium: "ASTA",
+    title: "AStA-Sitzung — Haushaltsentwurf",
+    meetingDate: new Date("2026-04-01"),
+    fileUrl: "/uploads/protocols/asta-2026-04-01.pdf",
+  },
+  {
+    id: "protocol-stupa-2026-03-20",
+    gremium: "STUPA",
+    title: "StuPa-Sitzung — Wahlordnung",
+    meetingDate: new Date("2026-03-20"),
+    fileUrl: "/uploads/protocols/stupa-2026-03-20.pdf",
+  },
+];
+
 async function main() {
   for (const e of events) {
     await prisma.event.upsert({
@@ -35,6 +59,14 @@ async function main() {
     });
   }
   console.log(`Seeded ${events.length} events`);
+  for (const p of protocols) {
+    await prisma.protocol.upsert({
+      where: { id: p.id },
+      update: p,
+      create: p,
+    });
+  }
+  console.log(`Seeded ${protocols.length} protocols`);
 }
 
 main()
