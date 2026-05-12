@@ -1,4 +1,5 @@
 import { PrismaClient } from "@prisma/client";
+import { hashPassword } from "../auth/passwords.js";
 
 const prisma = new PrismaClient();
 
@@ -50,6 +51,16 @@ const protocols = [
   },
 ];
 
+const ADMINS = [
+  {
+    id: "user-admin",
+    email: "admin@example.com",
+    password: "admin12345", // plain, hashed during seed
+    displayName: "Admin",
+    role: "EDITOR",
+  },
+];
+
 async function main() {
   for (const e of events) {
     await prisma.event.upsert({
@@ -67,6 +78,20 @@ async function main() {
     });
   }
   console.log(`Seeded ${protocols.length} protocols`);
+  for (const u of ADMINS) {
+    await prisma.user.upsert({
+      where: { id: u.id },
+      update: {}, // do nothing if user exists
+      create: {
+        id: u.id,
+        email: u.email,
+        passwordHash: await hashPassword(u.password),
+        displayName: u.displayName,
+        role: u.role,
+      },
+    });
+  }
+  console.log(`Seeded ${ADMINS.length} users`);
 }
 
 main()
