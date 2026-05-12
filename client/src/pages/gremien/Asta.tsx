@@ -1,7 +1,9 @@
-// components/pages/gremien/Asta.tsx
+// src/pages/gremien/Asta.tsx
 
 // TODO Step 13/14 — migrate this hardcoded content to admin-editable
 // fields backed by the API. See AW-2 epic.
+
+import AstaProtocols from "./AstaProtocols";
 
 const astaReferate = [
   {
@@ -71,20 +73,6 @@ const astaReferate = [
       "In der Remagener Innenstadt findet ihr unseren Studierendentreffpunkt ''Baracke''. Neben den regulären Öffnungszeiten, in denen man sich auf das ein oder andere Getränk treffen kann, finden dort regelmäßig Events statt. Das Referat Studierendentreffpunkt ist unter anderem für folgende Aufgaben in der BaRACke zuständig: Personal zu beschaffen, Personalplan erstellen, Getränke-Kalkulationen erstellen, Getränke bestellen, Öffentlichkeitsarbeit (Zusammenarbeit mit Presse, offizielle Gespräche mit Stadt, Hochschule, etc.), Sponsorenakquise und -betreuung, Renovierungsarbeiten und Eventorganisation. Aber auch Nicht-Referenten können sich sehr gerne in der Baracke als ehrenamtliches Thekenpersonal engagieren. Wenn ihr also Lust habt, in einem tollen Team zu arbeiten, meldet euch bei uns. Mehr Infos findet ihr hier.",
     email: "rac-asta-baracke@rheinahrcampus.de",
   },
-];
-
-const astaProtokolle = [
-  {
-    date: "2026-04-15",
-    description: "AStA-Sitzung — Sommerfest-Planung",
-    file: "/protokolle/asta-2026-04-15.pdf",
-  },
-  {
-    date: "2026-04-01",
-    description: "AStA-Sitzung — Haushaltsentwurf",
-    file: "/protokolle/asta-2026-04-01.pdf",
-  },
-  // …rest
 ];
 
 export default function Asta() {
@@ -161,34 +149,7 @@ export default function Asta() {
         </div>
       </section>
 
-      <section id="protokolle" className="scroll-mt-20">
-        <h2 className="text-3xl font-bold mb-6">Protokolle</h2>
-
-        <ul className="space-y-3">
-          {astaProtokolle.map((p) => (
-            <li key={p.file}>
-              <a
-                href={p.file}
-                download
-                className="flex items-center justify-between gap-4 p-4
-                     border border-gray-200 rounded-lg
-                     hover:border-asta-red hover:bg-asta-red hover:text-white
-                     transition-colors"
-              >
-                <div>
-                  <p className="font-semibold">
-                    {new Date(p.date).toLocaleDateString("de-DE")}
-                  </p>
-                  <p className="text-sm opacity-80">{p.description}</p>
-                </div>
-                <span aria-hidden className="text-2xl">
-                  ↓
-                </span>
-              </a>
-            </li>
-          ))}
-        </ul>
-      </section>
+      <AstaProtocols />
     </div>
   );
 }
