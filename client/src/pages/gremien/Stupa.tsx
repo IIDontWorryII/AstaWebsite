@@ -1,18 +1,6 @@
-// components/pages/gremien/Stupa.tsx
+// src/pages/gremien/Stupa.tsx
 
-const stupaProtokolle = [
-  {
-    date: "2026-04-15",
-    description: "StuPa-Sitzung — Sommerfest-Planung",
-    file: "/protokolle/asta-2026-04-15.pdf",
-  },
-  {
-    date: "2026-04-01",
-    description: "StuPa-Sitzung — Haushaltsentwurf",
-    file: "/protokolle/asta-2026-04-01.pdf",
-  },
-  // …rest
-];
+import GremiumProtocols from "./GremiumProtocols";
 
 export default function Stupa() {
   return (
@@ -69,34 +57,7 @@ export default function Stupa() {
         </p>
       </section>
 
-      <section id="protokolle" className="scroll-mt-20">
-        <h2 className="text-3xl font-bold mb-6">Protokolle</h2>
-
-        <ul className="space-y-3">
-          {stupaProtokolle.map((p) => (
-            <li key={p.file}>
-              <a
-                href={p.file}
-                download
-                className="flex items-center justify-between gap-4 p-4
-                     border border-gray-200 rounded-lg
-                     hover:border-asta-red hover:bg-asta-red hover:text-white
-                     transition-colors"
-              >
-                <div>
-                  <p className="font-semibold">
-                    {new Date(p.date).toLocaleDateString("de-DE")}
-                  </p>
-                  <p className="text-sm opacity-80">{p.description}</p>
-                </div>
-                <span aria-hidden className="text-2xl">
-                  ↓
-                </span>
-              </a>
-            </li>
-          ))}
-        </ul>
-      </section>
+      <GremiumProtocols gremium="STUPA" />
     </div>
   );
 }
