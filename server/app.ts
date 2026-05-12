@@ -43,9 +43,9 @@ app.get("/api/events", async (_req: Request, res: Response<EventDTO[]>) => {
 
 app.get(
   "/api/protocols",
-  async (_req: Request, res: Response<ProtocolDTO[]>) => {
+  async (req: Request, res: Response<ProtocolDTO[]>) => {
     const gremium =
-      typeof _req.query.gremium == "string" ? _req.query.gremium : undefined;
+      typeof req.query.gremium === "string" ? req.query.gremium : undefined;
 
     const protocols = await prisma.protocol.findMany({
       where: gremium ? { gremium } : undefined,
