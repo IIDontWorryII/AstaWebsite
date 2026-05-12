@@ -10,7 +10,7 @@
 import express, { type Request, type Response } from "express";
 import cors from "cors";
 import { PrismaClient } from "@prisma/client";
-import type { EventDTO, HealthResponse } from "../shared/types.js";
+import type { EventDTO, ProtocolDTO, HealthResponse } from "../shared/types.js";
 
 export const prisma = new PrismaClient();
 
@@ -40,3 +40,23 @@ app.get("/api/events", async (_req: Request, res: Response<EventDTO[]>) => {
     })),
   );
 });
+
+app.get(
+  "/api/protocols",
+  async (_req: Request, res: Response<ProtocolDTO[]>) => {
+    const gremium =
+      typeof _req.query.gremium == "string" ? _req.query.gremium : undefined;
+
+    const protocols = await prisma.protocol.findMany({
+      where: gremium ? { gremium } : undefined,
+      orderBy: { meetingDate: "desc" },
+    });
+    res.json(
+      protocols.map((p) => ({
+        ...p,
+        meetingDate: p.meetingDate.toISOString(),
+        uploadedAt: p.uploadedAt.toISOString(),
+      })),
+    );
+  },
+);

@@ -37,3 +37,12 @@ export interface EventDTO {
   createdAt: string;
   updatedAt: string;
 }
+
+export interface ProtocolDTO {
+  id: string;
+  gremium: string;
+  title: string;
+  meetingDate: string;
+  fileUrl: string;
+  uploadedAt: string;
+}
