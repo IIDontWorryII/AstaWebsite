@@ -3,7 +3,7 @@
 // TODO Step 13/14 — migrate this hardcoded content to admin-editable
 // fields backed by the API. See AW-2 epic.
 
-import AstaProtocols from "./AstaProtocols";
+import GremiumProtocols from "./GremiumProtocols";
 
 const astaReferate = [
   {
@@ -149,7 +149,7 @@ export default function Asta() {
         </div>
       </section>
 
-      <AstaProtocols />
+      <GremiumProtocols gremium="ASTA" />
     </div>
   );
 }

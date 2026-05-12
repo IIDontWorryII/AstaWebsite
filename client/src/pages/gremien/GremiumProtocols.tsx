@@ -1,18 +1,34 @@
-// components/pages/gremien/AstaProtocols.tsx
+// client/src/pages/gremien/GremiumProtocols.tsx
+//
+// Renders the "Protokolle" section for any Gremium. Pass the gremium name
+// as a prop; the component fetches /api/protocols?gremium=<name> and renders
+// loading / error / list states.
+//
+// Used by Asta.tsx (gremium="ASTA") and Stupa.tsx (gremium="STUPA").
 
 import { useEffect, useState } from "react";
 import type { ProtocolDTO } from "../../../../shared/types";
-import { fetchProtocols } from "../../lib/api";
+import { fetchProtocols } from "@/lib/api";
 
-export default function AstaProtocols() {
+interface GremiumProtocolsProps {
+  /** Which gremium's protocols to load — sent as the ?gremium= query param. */
+  gremium: string;
+}
+
+export default function GremiumProtocols({ gremium }: GremiumProtocolsProps) {
   const [protocols, setProtocols] = useState<ProtocolDTO[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchProtocols("ASTA")
+    // Reset state when the gremium prop changes so the new fetch starts
+    // from a clean loading state instead of showing stale data.
+    setProtocols(null);
+    setError(null);
+
+    fetchProtocols(gremium)
       .then(setProtocols)
       .catch((e) => setError(e.message));
-  }, []);
+  }, [gremium]);
 
   return (
     <section id="protokolle" className="scroll-mt-20">
