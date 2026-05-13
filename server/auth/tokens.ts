@@ -4,6 +4,7 @@
 // signed with JWT_SECRET so we can trust it on later requests without
 // re-querying the database. Used by login (AW-14) and the auth middleware (AW-16).
 
+import "dotenv/config";
 import jwt from "jsonwebtoken";
 import type { UserRole } from "../../shared/types.js";
 
