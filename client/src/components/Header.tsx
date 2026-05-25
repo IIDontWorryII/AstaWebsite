@@ -1,6 +1,6 @@
 // client/src/components/Header.tsx
 
-import { Link, NavLink } from "react-router-dom";
+import { Link, NavLink, useNavigate } from "react-router-dom";
 import {
   NavigationMenu,
   NavigationMenuContent,
@@ -9,6 +9,8 @@ import {
   NavigationMenuList,
   NavigationMenuTrigger,
 } from "@/components/ui/navigation-menu";
+import { Button } from "@/components/ui/button";
+import { useAuth } from "@/auth/AuthContext";
 
 const navLinkClass = ({ isActive }: { isActive: boolean }) =>
   `font-medium pb-1 ${isActive ? "text-asta-red border-b-2 border-asta-red" : "hover:text-asta-red"}`;
@@ -120,8 +122,10 @@ export default function Header() {
           ))}
         </nav>
 
-        {/* Right: CTA + icons */}
+        {/* Right: auth widget + social icons */}
         <div className="flex items-center gap-4">
+          <AuthWidget />
+
           <a
             href="#"
             target="_blank"
@@ -143,5 +147,98 @@ export default function Header() {
         </div>
       </div>
     </header>
+  );
+}
+
+/**
+ * Right-hand auth controls. Reads the current user from AuthContext and
+ * shows one of three states:
+ *   - loading: nothing (avoids a "Login" flash for users who actually have
+ *              a valid session — the /api/me check is in flight)
+ *   - logged out: Login link + Registrieren button
+ *   - logged in:  Profil link (with display name) + Logout button
+ *
+ * Kept as a sibling component (not inlined) so its state logic doesn't
+ * clutter the layout JSX above.
+ */
+function AuthWidget() {
+  const { user, loading, logout } = useAuth();
+  const navigate = useNavigate();
+
+  // During the initial session check, render nothing. The widget is small
+  // and slots in beside other controls — empty is less disruptive than a
+  // brief "Login / Registrieren" flash that then swaps to the user menu.
+  if (loading) {
+    return null;
+  }
+
+  // Logged out: a low-emphasis text link for Login and a primary Button
+  // for Registrieren. The visual hierarchy nudges new users toward signup
+  // while letting returning users find Login easily.
+  if (!user) {
+    return (
+      <div className="flex items-center gap-3">
+        <Link
+          to="/login"
+          className="text-sm font-medium hover:text-asta-red"
+        >
+          Login
+        </Link>
+        {/* Base UI's Button uses `render={<Link/>}` (not `asChild` like Radix)
+            to delegate rendering to a Link without losing button styles.
+            `nativeButton={false}` tells Base UI we're rendering an <a>, not
+            a <button> — without it, Base UI logs an accessibility warning. */}
+        <Button
+          render={<Link to="/signup" />}
+          nativeButton={false}
+          size="sm"
+          variant="brandOutline"
+        >
+          Registrieren
+        </Button>
+      </div>
+    );
+  }
+
+  // Logged in: name links to profile, button logs out and returns home.
+  //
+  // IMPORTANT: navigate("/") happens *before* awaiting logout(). Reason:
+  // when logout() resolves, AuthContext sets user=null. If we're still on
+  // /profile at that moment, Profile's guard (`if (!user) <Navigate
+  // to="/login"/>`) fires and the imperative navigate("/") below loses
+  // the race. By navigating first, /profile unmounts before its guard
+  // can re-render, and the user lands on Home as intended.
+  async function handleLogout() {
+    navigate("/", { replace: true });
+    try {
+      await logout();
+    } catch (err) {
+      // Logout failures are rare (the server endpoint is essentially
+      // a "always succeeds" no-op). Log for debugging; the user's local
+      // state is already cleared by AuthContext.logout() on success.
+      console.error("Logout failed:", err);
+    }
+  }
+
+  return (
+    <div className="flex items-center gap-3">
+      <Link
+        to="/profile"
+        className="text-sm font-medium hover:text-asta-red"
+        title="Mein Profil"
+      >
+        {user.displayName}
+      </Link>
+      {/* Tailwind v4 removed the default `cursor: pointer` on <button>,
+          so we add it explicitly to match users' click-affordance expectations. */}
+      <Button
+        onClick={handleLogout}
+        size="sm"
+        variant="ghost"
+        className="cursor-pointer"
+      >
+        Logout
+      </Button>
+    </div>
   );
 }
