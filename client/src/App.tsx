@@ -10,6 +10,9 @@ import NotFound from "./pages/NotFound";
 import Asta from "./pages/gremien/Asta";
 import Stupa from "./pages/gremien/Stupa";
 import Fachschaften from "./pages/gremien/Fachschaften";
+import Login from "./pages/Login";
+import Signup from "./pages/Signup";
+import Profile from "./pages/Profile";
 
 function App() {
   return (
@@ -24,6 +27,9 @@ function App() {
         <Route path="/baracke" element={<Baracke />} />
         <Route path="/sport" element={<Sport />} />
         <Route path="/kontakt" element={<Kontakt />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
+        <Route path="/profile" element={<Profile />} />
         <Route path="*" element={<NotFound />} />
       </Route>
     </Routes>
