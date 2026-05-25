@@ -20,6 +20,14 @@ export interface PublicUser {
   createdAt: string; // ISO 8601
 }
 
+/**
+ * Successful auth response (signup, login, /me).
+ * The token lives in an httpOnly cookie, not in the body.
+ */
+export interface AuthResponse {
+  user: PublicUser;
+}
+
 /** Response shape for GET /api/health. */
 export interface HealthResponse {
   status: "ok";
