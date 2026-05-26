@@ -30,3 +30,6 @@ server/uploads/
 *.db-journal
 *.sqlite
 *.sqlite-journal
+
+# curl/Postman session cookies from local API smoke tests
+cookies.txt

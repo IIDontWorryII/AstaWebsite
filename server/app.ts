@@ -19,32 +19,22 @@ import type {
 } from "../shared/types.js";
 import { hashPassword, verifyPassword } from "./auth/passwords.js";
 import { signToken, verifyToken } from "./auth/tokens.js";
+import {
+  COOKIE_NAME,
+  setAuthCookie,
+  clearAuthCookie,
+} from "./auth/cookie.js";
+import { corsOptions } from "./auth/cors.js";
 
 export const prisma = new PrismaClient();
 export const app = express();
 
-const COOKIE_NAME = "auth_token";
-const COOKIE_OPTIONS = {
-  httpOnly: true,
-  secure: false,
-  sameSite: "lax" as const,
-  maxAge: 24 * 60 * 60 * 1000,
-  path: "/",
-};
-
-function setAuthCookie(res: Response, token: string) {
-  res.cookie(COOKIE_NAME, token, COOKIE_OPTIONS);
-}
-
-function clearAuthCookie(res: Response) {
-  res.clearCookie(COOKIE_NAME, COOKIE_OPTIONS);
-}
-
-// `credentials: true` lets the browser include cookies on cross-origin
-// requests. In dev the Vite proxy forwards everything from :5173 to :5000
-// so cookies "just work", but enabling this also covers the case where
-// someone hits the API directly (e.g. from Postman or another origin).
-app.use(cors({ origin: true, credentials: true }));
+// CORS allows the browser to include cookies on cross-origin requests
+// (credentials: true). Allowed origins depend on environment:
+//   - dev: any origin (Vite proxy + Postman + curl all work)
+//   - prod: comma-separated list from CORS_ORIGIN env var
+// See server/auth/cors.ts for the full policy.
+app.use(cors(corsOptions()));
 app.use(express.json());
 app.use(cookieParser());
 
