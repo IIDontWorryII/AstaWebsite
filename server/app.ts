@@ -20,8 +20,17 @@ import type {
 import { hashPassword, verifyPassword } from "./auth/passwords.js";
 import { signToken } from "./auth/tokens.js";
 import { setAuthCookie, clearAuthCookie } from "./auth/cookie.js";
-import { requireAuth } from "./auth/middleware.js";
+import { requireAuth, requireEditor } from "./auth/middleware.js";
+import {
+  EVENTS_UPLOAD_DIR,
+  EVENTS_PUBLIC_PREFIX,
+  deleteEventPosterByUrl,
+  parseEventPoster,
+  publicUrlFor,
+} from "./upload/events.js";
 import { corsOptions } from "./auth/cors.js";
+import { EventCreateInput, EventUpdateInput } from "./events/schemas.js";
+import { toEventDTO } from "./events/dto.js";
 
 export const prisma = new PrismaClient();
 export const app = express();
@@ -35,6 +44,11 @@ app.use(cors(corsOptions()));
 app.use(express.json());
 app.use(cookieParser());
 
+// Serve uploaded files (event posters, protocol PDFs) as static assets.
+// E.g. an event with imageUrl "/uploads/events/abc.jpg" is fetched by the
+// browser from GET /uploads/events/abc.jpg, served directly off disk.
+app.use(EVENTS_PUBLIC_PREFIX, express.static(EVENTS_UPLOAD_DIR));
+
 app.get("/", (_req: Request, res: Response) => {
   res.send("ASTAWebsite API is running");
 });
@@ -47,15 +61,122 @@ app.get("/api/events", async (_req: Request, res: Response<EventDTO[]>) => {
   const events = await prisma.event.findMany({
     orderBy: { startsAt: "asc" },
   });
-  res.json(
-    events.map((e) => ({
-      ...e,
-      startsAt: e.startsAt.toISOString(),
-      createdAt: e.createdAt.toISOString(),
-      updatedAt: e.updatedAt.toISOString(),
-    })),
-  );
+  res.json(events.map(toEventDTO));
 });
+
+// Create event. EDITOR only. Accepts multipart/form-data with text fields
+// (title, description, place, startsAt, price?) and an optional `image` file.
+app.post(
+  "/api/events",
+  requireEditor,
+  parseEventPoster,
+  async (req: Request, res: Response<EventDTO | { error: string }>) => {
+    const parsed = EventCreateInput.safeParse(req.body);
+    if (!parsed.success) {
+      // If multer already wrote a file, clean it up — we're rejecting the row.
+      if (req.file) await deleteEventPosterByUrl(publicUrlFor(req.file.filename));
+      return res.status(400).json({ error: parsed.error.issues[0].message });
+    }
+    const data = parsed.data;
+
+    const event = await prisma.event.create({
+      data: {
+        title: data.title,
+        description: data.description,
+        place: data.place,
+        startsAt: new Date(data.startsAt),
+        price: data.price ?? null,
+        imageUrl: req.file ? publicUrlFor(req.file.filename) : null,
+      },
+    });
+
+    return res.status(201).json(toEventDTO(event));
+  },
+);
+
+// Update event. EDITOR only. Partial update — only fields in the request
+// body are changed. If a new image is uploaded, it replaces the old one
+// (old file deleted from disk). Missing image = keep existing.
+app.put(
+  "/api/events/:id",
+  requireEditor,
+  parseEventPoster,
+  // Request<{ id: string }> declares the expected URL params so req.params.id
+  // is typed as `string` (Express 5's default is wider: `string | string[]`).
+  async (
+    req: Request<{ id: string }>,
+    res: Response<EventDTO | { error: string }>,
+  ) => {
+    const { id } = req.params;
+
+    const parsed = EventUpdateInput.safeParse(req.body);
+    if (!parsed.success) {
+      if (req.file) await deleteEventPosterByUrl(publicUrlFor(req.file.filename));
+      return res.status(400).json({ error: parsed.error.issues[0].message });
+    }
+    const data = parsed.data;
+
+    // If a new image was uploaded, we need to delete the old one. Look up
+    // the existing row first so we know what to clean.
+    const existing = await prisma.event.findUnique({ where: { id } });
+    if (!existing) {
+      if (req.file) await deleteEventPosterByUrl(publicUrlFor(req.file.filename));
+      return res.status(404).json({ error: "Event not found" });
+    }
+
+    // Build the update payload conditionally — only include keys the
+    // client actually sent. This is what makes the update "partial".
+    const updatePayload: {
+      title?: string;
+      description?: string;
+      place?: string;
+      startsAt?: Date;
+      price?: string | null;
+      imageUrl?: string | null;
+    } = {};
+    if (data.title !== undefined) updatePayload.title = data.title;
+    if (data.description !== undefined) updatePayload.description = data.description;
+    if (data.place !== undefined) updatePayload.place = data.place;
+    if (data.startsAt !== undefined) updatePayload.startsAt = new Date(data.startsAt);
+    if (data.price !== undefined) updatePayload.price = data.price;
+    if (req.file) {
+      // New image — delete the previous one and point to the new file.
+      await deleteEventPosterByUrl(existing.imageUrl);
+      updatePayload.imageUrl = publicUrlFor(req.file.filename);
+    }
+
+    const updated = await prisma.event.update({
+      where: { id },
+      data: updatePayload,
+    });
+
+    return res.json(toEventDTO(updated));
+  },
+);
+
+// Delete event. EDITOR only. Removes the row AND the image file from disk.
+app.delete(
+  "/api/events/:id",
+  requireEditor,
+  async (
+    req: Request<{ id: string }>,
+    res: Response<{ error: string } | undefined>,
+  ) => {
+    const { id } = req.params;
+
+    // Look up first so we know the imageUrl for disk cleanup.
+    const existing = await prisma.event.findUnique({ where: { id } });
+    if (!existing) {
+      return res.status(404).json({ error: "Event not found" });
+    }
+
+    await prisma.event.delete({ where: { id } });
+    await deleteEventPosterByUrl(existing.imageUrl);
+
+    // 204 No Content — successful delete with no body to return.
+    return res.status(204).send();
+  },
+);
 
 app.get(
   "/api/protocols",
