@@ -11,6 +11,7 @@
 
 import type { EventDTO } from "../../../shared/types";
 import { apiFetch, jsonOrThrow } from "./api";
+import { fetchEvents } from "./api";
 
 /** Plain text fields for create/update. Image is uploaded as a separate File. */
 export interface EventFormInput {
@@ -63,6 +64,19 @@ export async function updateEvent(
     body: buildFormData(input, image),
   });
   return jsonOrThrow<EventDTO>(res, "Failed to update event");
+}
+
+/**
+ * Fetch a single event by id. Returns null if not found.
+ *
+ * Implementation note: currently fetches the whole list and filters
+ * client-side. Fine for small lists. When events grow into the hundreds,
+ * add a real `GET /api/events/:id` backend route and swap this in — the
+ * function signature stays the same.
+ */
+export async function fetchEventById(id: string): Promise<EventDTO | null> {
+  const all = await fetchEvents();
+  return all.find((e) => e.id === id) ?? null;
 }
 
 export async function deleteEvent(id: string): Promise<void> {

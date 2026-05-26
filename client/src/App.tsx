@@ -14,6 +14,8 @@ import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import Profile from "./pages/Profile";
 import AdminEvents from "./pages/admin/AdminEvents";
+import NewEvent from "./pages/admin/NewEvent";
+import EditEvent from "./pages/admin/EditEvent";
 import RequireEditor from "./auth/RequireEditor";
 
 function App() {
@@ -37,6 +39,22 @@ function App() {
           element={
             <RequireEditor>
               <AdminEvents />
+            </RequireEditor>
+          }
+        />
+        <Route
+          path="/admin/events/new"
+          element={
+            <RequireEditor>
+              <NewEvent />
+            </RequireEditor>
+          }
+        />
+        <Route
+          path="/admin/events/:id/edit"
+          element={
+            <RequireEditor>
+              <EditEvent />
             </RequireEditor>
           }
         />
