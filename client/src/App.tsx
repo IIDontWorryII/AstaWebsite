@@ -13,6 +13,8 @@ import Fachschaften from "./pages/gremien/Fachschaften";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import Profile from "./pages/Profile";
+import AdminEvents from "./pages/admin/AdminEvents";
+import RequireEditor from "./auth/RequireEditor";
 
 function App() {
   return (
@@ -30,6 +32,14 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/profile" element={<Profile />} />
+        <Route
+          path="/admin/events"
+          element={
+            <RequireEditor>
+              <AdminEvents />
+            </RequireEditor>
+          }
+        />
         <Route path="*" element={<NotFound />} />
       </Route>
     </Routes>
