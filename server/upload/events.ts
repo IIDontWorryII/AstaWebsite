@@ -41,8 +41,12 @@ const ALLOWED_MIME_TYPES = new Set([
   "image/webp",
 ]);
 
-/** Max upload size in bytes — 5 MB. */
-const MAX_SIZE_BYTES = 5 * 1024 * 1024;
+/**
+ * Max upload size in bytes — 20 MB. Generous enough for high-res JPEGs
+ * and PNG posters straight from a phone (often 5-15 MB). If anyone ever
+ * uploads bigger, multer rejects with LIMIT_FILE_SIZE → 413 response.
+ */
+const MAX_SIZE_BYTES = 20 * 1024 * 1024;
 
 /**
  * Map a mime type to the file extension we use on disk. We pick the
