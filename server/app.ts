@@ -18,12 +18,9 @@ import type {
   AuthResponse,
 } from "../shared/types.js";
 import { hashPassword, verifyPassword } from "./auth/passwords.js";
-import { signToken, verifyToken } from "./auth/tokens.js";
-import {
-  COOKIE_NAME,
-  setAuthCookie,
-  clearAuthCookie,
-} from "./auth/cookie.js";
+import { signToken } from "./auth/tokens.js";
+import { setAuthCookie, clearAuthCookie } from "./auth/cookie.js";
+import { requireAuth } from "./auth/middleware.js";
 import { corsOptions } from "./auth/cors.js";
 
 export const prisma = new PrismaClient();
@@ -184,28 +181,31 @@ app.post("/api/logout", (_req, res) => {
   res.json({ ok: true });
 });
 
+// /api/me — return the current user. requireAuth handles the cookie/token
+// check (returns 401 if missing/bad). The handler then loads the fresh user
+// from the DB so the response reflects any role changes or display name
+// edits since the token was issued (the middleware itself trusts the token
+// for speed; this read is the source of truth for the frontend's user state).
 app.get(
   "/api/me",
+  requireAuth,
   async (req: Request, res: Response<AuthResponse | { error: string }>) => {
-    const token = req.cookies?.[COOKIE_NAME];
-    if (!token) return res.status(401).json({ error: "Not authenticated" });
-
-    try {
-      const { sub } = verifyToken(token);
-      const user = await prisma.user.findUnique({ where: { id: sub } });
-      if (!user) return res.status(401).json({ error: "Not authenticated" });
-
-      return res.json({
-        user: {
-          id: user.id,
-          email: user.email,
-          displayName: user.displayName,
-          role: user.role as "USER" | "EDITOR",
-          createdAt: user.createdAt.toISOString(),
-        },
-      });
-    } catch {
+    // requireAuth guarantees req.user is set; the `!` asserts that to TS.
+    const { id } = req.user!;
+    const user = await prisma.user.findUnique({ where: { id } });
+    if (!user) {
+      // Token was valid but the user was deleted. Treat as logged out.
       return res.status(401).json({ error: "Not authenticated" });
     }
+
+    return res.json({
+      user: {
+        id: user.id,
+        email: user.email,
+        displayName: user.displayName,
+        role: user.role as "USER" | "EDITOR",
+        createdAt: user.createdAt.toISOString(),
+      },
+    });
   },
 );
