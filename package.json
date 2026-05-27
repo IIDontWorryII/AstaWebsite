@@ -6,8 +6,8 @@
   "scripts": {
     "client": "npm --prefix client run dev",
     "server": "npm --prefix server run dev",
-    "build:client": "npm --prefix client install && npm --prefix client run build",
-    "build:server": "npm --prefix server install && npm --prefix server exec -- prisma generate && npm --prefix server run build",
+    "build:client": "npm --prefix client install --include=dev && npm --prefix client run build",
+    "build:server": "npm --prefix server install --include=dev && npm --prefix server exec -- prisma generate && npm --prefix server run build",
     "migrate:deploy": "npm --prefix server exec -- prisma migrate deploy",
     "build": "npm run build:client && npm run build:server && npm run migrate:deploy",
     "start": "cd server && node dist/server/index.js"
