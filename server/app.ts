@@ -31,6 +31,18 @@ import {
 import { corsOptions } from "./auth/cors.js";
 import { EventCreateInput, EventUpdateInput } from "./events/schemas.js";
 import { toEventDTO } from "./events/dto.js";
+import {
+  PROTOCOLS_UPLOAD_DIR,
+  PROTOCOLS_PUBLIC_PREFIX,
+  deleteProtocolFileByUrl,
+  parseProtocolFile,
+  publicUrlFor as protocolPublicUrl,
+} from "./upload/protocols.js";
+import {
+  ProtocolCreateInput,
+  ProtocolUpdateInput,
+} from "./protocols/schemas.js";
+import { toProtocolDTO } from "./protocols/dto.js";
 
 export const prisma = new PrismaClient();
 export const app = express();
@@ -48,6 +60,7 @@ app.use(cookieParser());
 // E.g. an event with imageUrl "/uploads/events/abc.jpg" is fetched by the
 // browser from GET /uploads/events/abc.jpg, served directly off disk.
 app.use(EVENTS_PUBLIC_PREFIX, express.static(EVENTS_UPLOAD_DIR));
+app.use(PROTOCOLS_PUBLIC_PREFIX, express.static(PROTOCOLS_UPLOAD_DIR));
 
 app.get("/", (_req: Request, res: Response) => {
   res.send("ASTAWebsite API is running");
@@ -188,13 +201,112 @@ app.get(
       where: gremium ? { gremium } : undefined,
       orderBy: { meetingDate: "desc" },
     });
-    res.json(
-      protocols.map((p) => ({
-        ...p,
-        meetingDate: p.meetingDate.toISOString(),
-        uploadedAt: p.uploadedAt.toISOString(),
-      })),
-    );
+    res.json(protocols.map(toProtocolDTO));
+  },
+);
+
+// Create protocol. EDITOR only. Accepts multipart/form-data with text
+// fields (gremium, title, meetingDate) and a REQUIRED `file` PDF upload.
+app.post(
+  "/api/protocols",
+  requireEditor,
+  parseProtocolFile,
+  async (req: Request, res: Response<ProtocolDTO | { error: string }>) => {
+    // The PDF is the whole point — reject if missing.
+    if (!req.file) {
+      return res.status(400).json({ error: "PDF file is required" });
+    }
+
+    const parsed = ProtocolCreateInput.safeParse(req.body);
+    if (!parsed.success) {
+      // Clean up the orphan upload before rejecting.
+      await deleteProtocolFileByUrl(protocolPublicUrl(req.file.filename));
+      return res.status(400).json({ error: parsed.error.issues[0].message });
+    }
+    const data = parsed.data;
+
+    const protocol = await prisma.protocol.create({
+      data: {
+        gremium: data.gremium,
+        title: data.title,
+        meetingDate: new Date(data.meetingDate),
+        fileUrl: protocolPublicUrl(req.file.filename),
+      },
+    });
+
+    return res.status(201).json(toProtocolDTO(protocol));
+  },
+);
+
+// Update protocol. EDITOR only. Partial update — only fields present in
+// the request body change. If a new PDF is uploaded, it replaces the old
+// one (old file deleted from disk). Missing PDF = keep existing.
+app.put(
+  "/api/protocols/:id",
+  requireEditor,
+  parseProtocolFile,
+  async (
+    req: Request<{ id: string }>,
+    res: Response<ProtocolDTO | { error: string }>,
+  ) => {
+    const { id } = req.params;
+
+    const parsed = ProtocolUpdateInput.safeParse(req.body);
+    if (!parsed.success) {
+      if (req.file)
+        await deleteProtocolFileByUrl(protocolPublicUrl(req.file.filename));
+      return res.status(400).json({ error: parsed.error.issues[0].message });
+    }
+    const data = parsed.data;
+
+    const existing = await prisma.protocol.findUnique({ where: { id } });
+    if (!existing) {
+      if (req.file)
+        await deleteProtocolFileByUrl(protocolPublicUrl(req.file.filename));
+      return res.status(404).json({ error: "Protocol not found" });
+    }
+
+    const updatePayload: {
+      gremium?: string;
+      title?: string;
+      meetingDate?: Date;
+      fileUrl?: string;
+    } = {};
+    if (data.gremium !== undefined) updatePayload.gremium = data.gremium;
+    if (data.title !== undefined) updatePayload.title = data.title;
+    if (data.meetingDate !== undefined)
+      updatePayload.meetingDate = new Date(data.meetingDate);
+    if (req.file) {
+      await deleteProtocolFileByUrl(existing.fileUrl);
+      updatePayload.fileUrl = protocolPublicUrl(req.file.filename);
+    }
+
+    const updated = await prisma.protocol.update({
+      where: { id },
+      data: updatePayload,
+    });
+    return res.json(toProtocolDTO(updated));
+  },
+);
+
+// Delete protocol. EDITOR only. Removes the row AND the PDF file from disk.
+app.delete(
+  "/api/protocols/:id",
+  requireEditor,
+  async (
+    req: Request<{ id: string }>,
+    res: Response<{ error: string } | undefined>,
+  ) => {
+    const { id } = req.params;
+
+    const existing = await prisma.protocol.findUnique({ where: { id } });
+    if (!existing) {
+      return res.status(404).json({ error: "Protocol not found" });
+    }
+
+    await prisma.protocol.delete({ where: { id } });
+    await deleteProtocolFileByUrl(existing.fileUrl);
+    return res.status(204).send();
   },
 );
 
