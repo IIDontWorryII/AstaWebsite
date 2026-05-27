@@ -10,7 +10,7 @@
 // values — only the gremien that have a public protocol section get
 // listed. To add a new gremium, extend GREMIUM_OPTIONS below.
 
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import type { ProtocolDTO } from "../../../../shared/types";
 import {

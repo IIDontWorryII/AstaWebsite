@@ -6,8 +6,16 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
+  // PostgreSQL is used in both dev and production. Local dev points at a
+  // Neon free-tier database; production will point at a separate Neon
+  // database (set up later in the deploy slice).
+  //
+  // url       = POOLED connection used by the app at runtime.
+  // directUrl = UNPOOLED connection used only by `prisma migrate`; the
+  //             pooler doesn't support some DDL operations during migrations.
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model User {

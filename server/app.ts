@@ -7,6 +7,8 @@
 // `index.ts` is the production entry point: it imports `app` from here and
 // calls `app.listen()`.
 
+import path from "node:path";
+import { existsSync } from "node:fs";
 import express, { type Request, type Response } from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
@@ -61,10 +63,6 @@ app.use(cookieParser());
 // browser from GET /uploads/events/abc.jpg, served directly off disk.
 app.use(EVENTS_PUBLIC_PREFIX, express.static(EVENTS_UPLOAD_DIR));
 app.use(PROTOCOLS_PUBLIC_PREFIX, express.static(PROTOCOLS_UPLOAD_DIR));
-
-app.get("/", (_req: Request, res: Response) => {
-  res.send("ASTAWebsite API is running");
-});
 
 app.get("/api/health", (_req: Request, res: Response<HealthResponse>) => {
   res.json({ status: "ok", version: "0.1.0" });
@@ -442,3 +440,31 @@ app.get(
     });
   },
 );
+
+// ─── Serve the built frontend (production) ─────────────────────────────
+//
+// After `npm run build` in client/, Vite outputs static files to
+// client/dist/. In production we serve them straight off Express:
+//   - express.static() returns real files for asset paths (/assets/*.js,
+//     /favicon.ico, etc.). Falls through to the next middleware for paths
+//     that don't match a file.
+//   - A catch-all returns index.html for any non-API, non-asset GET so
+//     React Router URLs (e.g. /admin/events, /gremien/asta) work on
+//     direct visit and on page refresh.
+//
+// We register this AFTER all the API routes so /api/* never accidentally
+// gets index.html. We only activate it when client/dist exists — in dev
+// the user runs the Vite dev server on :5173, and the Express server on
+// :5000 doesn't need to serve any HTML.
+
+const CLIENT_DIST_DIR = path.join(process.cwd(), "..", "client", "dist");
+
+if (existsSync(CLIENT_DIST_DIR)) {
+  app.use(express.static(CLIENT_DIST_DIR));
+
+  // SPA fallback. Express 5's path-to-regexp v6 requires named wildcards;
+  // "/{*splat}" matches any path with at least one segment.
+  app.get("/{*splat}", (_req: Request, res: Response) => {
+    res.sendFile(path.join(CLIENT_DIST_DIR, "index.html"));
+  });
+}

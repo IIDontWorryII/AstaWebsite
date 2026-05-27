@@ -29,5 +29,8 @@
     "outDir": "dist"
   },
   "include": ["**/*.ts", "../shared/**/*.ts"],
-  "exclude": ["node_modules", "dist"]
+  // Tests are excluded from production build output (we still typecheck them
+  // via `npm run typecheck`, which compiles everything; the test runner uses
+  // tsx directly). Without this, dist/ ships supertest/vitest references.
+  "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.test.tsx"]
 }
