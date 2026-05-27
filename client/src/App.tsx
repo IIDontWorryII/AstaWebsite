@@ -16,6 +16,9 @@ import Profile from "./pages/Profile";
 import AdminEvents from "./pages/admin/AdminEvents";
 import NewEvent from "./pages/admin/NewEvent";
 import EditEvent from "./pages/admin/EditEvent";
+import AdminProtocols from "./pages/admin/AdminProtocols";
+import NewProtocol from "./pages/admin/NewProtocol";
+import EditProtocol from "./pages/admin/EditProtocol";
 import RequireEditor from "./auth/RequireEditor";
 
 function App() {
@@ -55,6 +58,30 @@ function App() {
           element={
             <RequireEditor>
               <EditEvent />
+            </RequireEditor>
+          }
+        />
+        <Route
+          path="/admin/protocols"
+          element={
+            <RequireEditor>
+              <AdminProtocols />
+            </RequireEditor>
+          }
+        />
+        <Route
+          path="/admin/protocols/new"
+          element={
+            <RequireEditor>
+              <NewProtocol />
+            </RequireEditor>
+          }
+        />
+        <Route
+          path="/admin/protocols/:id/edit"
+          element={
+            <RequireEditor>
+              <EditProtocol />
             </RequireEditor>
           }
         />
