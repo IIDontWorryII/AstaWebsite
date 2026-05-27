@@ -22,21 +22,25 @@ import { verifyToken } from "./tokens.js";
 
 // ─── Type extension ─────────────────────────────────────────────────────
 //
-// Express's Request type doesn't know about `req.user`. This `declare
-// module` block tells TypeScript "add a `user?` field to Request globally."
-// Any handler that imports nothing from here still sees the field — that's
-// the point of a global declaration.
+// Express's Request type doesn't know about `req.user`. We add it by
+// augmenting the global `Express.Request` namespace — this is the pattern
+// used by passport, express-session, multer, etc., so they all compose
+// cleanly. (An alternative `declare module "express"` block targets a
+// module-level interface and can conflict with the global-namespace
+// versions other libraries use.)
 //
 // `user` is optional (?) because unauthenticated requests don't have it.
 // Inside a handler that runs *after* requireAuth, you can safely read
 // req.user (it's guaranteed to be set), but TS still wants a null-check
 // unless you assert. Most handlers do `const user = req.user!` or destructure.
-declare module "express" {
-  interface Request {
-    user?: {
-      id: string;
-      role: UserRole;
-    };
+declare global {
+  namespace Express {
+    interface Request {
+      user?: {
+        id: string;
+        role: UserRole;
+      };
+    }
   }
 }
 
