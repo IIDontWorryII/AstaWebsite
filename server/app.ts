@@ -24,21 +24,17 @@ import { signToken } from "./auth/tokens.js";
 import { setAuthCookie, clearAuthCookie } from "./auth/cookie.js";
 import { requireAuth, requireEditor } from "./auth/middleware.js";
 import {
-  EVENTS_UPLOAD_DIR,
-  EVENTS_PUBLIC_PREFIX,
   deleteEventPosterByUrl,
   parseEventPoster,
-  publicUrlFor,
+  storeEventPoster,
 } from "./upload/events.js";
 import { corsOptions } from "./auth/cors.js";
 import { EventCreateInput, EventUpdateInput } from "./events/schemas.js";
 import { toEventDTO } from "./events/dto.js";
 import {
-  PROTOCOLS_UPLOAD_DIR,
-  PROTOCOLS_PUBLIC_PREFIX,
   deleteProtocolFileByUrl,
   parseProtocolFile,
-  publicUrlFor as protocolPublicUrl,
+  storeProtocolFile,
 } from "./upload/protocols.js";
 import {
   ProtocolCreateInput,
@@ -58,11 +54,10 @@ app.use(cors(corsOptions()));
 app.use(express.json());
 app.use(cookieParser());
 
-// Serve uploaded files (event posters, protocol PDFs) as static assets.
-// E.g. an event with imageUrl "/uploads/events/abc.jpg" is fetched by the
-// browser from GET /uploads/events/abc.jpg, served directly off disk.
-app.use(EVENTS_PUBLIC_PREFIX, express.static(EVENTS_UPLOAD_DIR));
-app.use(PROTOCOLS_PUBLIC_PREFIX, express.static(PROTOCOLS_UPLOAD_DIR));
+// NOTE: We used to serve /uploads/* off the local filesystem here.
+// Uploads now live in Cloudflare R2 — the browser fetches them directly
+// from the R2 public URL stored in each row's imageUrl / fileUrl field.
+// No Express static middleware needed for those paths.
 
 app.get("/api/health", (_req: Request, res: Response<HealthResponse>) => {
   res.json({ status: "ok", version: "0.1.0" });
@@ -77,6 +72,9 @@ app.get("/api/events", async (_req: Request, res: Response<EventDTO[]>) => {
 
 // Create event. EDITOR only. Accepts multipart/form-data with text fields
 // (title, description, place, startsAt, price?) and an optional `image` file.
+//
+// Multer keeps the file in memory (req.file.buffer); we only push it to
+// R2 *after* zod validation passes, so a 400 has zero cleanup cost.
 app.post(
   "/api/events",
   requireEditor,
@@ -84,11 +82,12 @@ app.post(
   async (req: Request, res: Response<EventDTO | { error: string }>) => {
     const parsed = EventCreateInput.safeParse(req.body);
     if (!parsed.success) {
-      // If multer already wrote a file, clean it up — we're rejecting the row.
-      if (req.file) await deleteEventPosterByUrl(publicUrlFor(req.file.filename));
+      // No cleanup needed — req.file.buffer is just an in-memory blob.
       return res.status(400).json({ error: parsed.error.issues[0].message });
     }
     const data = parsed.data;
+
+    const imageUrl = req.file ? await storeEventPoster(req.file) : null;
 
     const event = await prisma.event.create({
       data: {
@@ -97,7 +96,7 @@ app.post(
         place: data.place,
         startsAt: new Date(data.startsAt),
         price: data.price ?? null,
-        imageUrl: req.file ? publicUrlFor(req.file.filename) : null,
+        imageUrl,
       },
     });
 
@@ -122,16 +121,15 @@ app.put(
 
     const parsed = EventUpdateInput.safeParse(req.body);
     if (!parsed.success) {
-      if (req.file) await deleteEventPosterByUrl(publicUrlFor(req.file.filename));
+      // No cleanup needed — buffer never reached R2.
       return res.status(400).json({ error: parsed.error.issues[0].message });
     }
     const data = parsed.data;
 
-    // If a new image was uploaded, we need to delete the old one. Look up
-    // the existing row first so we know what to clean.
+    // Look up the existing row first so we know what (if any) old image
+    // to delete from R2 if a replacement was uploaded.
     const existing = await prisma.event.findUnique({ where: { id } });
     if (!existing) {
-      if (req.file) await deleteEventPosterByUrl(publicUrlFor(req.file.filename));
       return res.status(404).json({ error: "Event not found" });
     }
 
@@ -151,9 +149,10 @@ app.put(
     if (data.startsAt !== undefined) updatePayload.startsAt = new Date(data.startsAt);
     if (data.price !== undefined) updatePayload.price = data.price;
     if (req.file) {
-      // New image — delete the previous one and point to the new file.
+      // Upload new image to R2, then delete the previous one from R2.
+      // Order matters: upload first so we don't lose both if upload fails.
+      updatePayload.imageUrl = await storeEventPoster(req.file);
       await deleteEventPosterByUrl(existing.imageUrl);
-      updatePayload.imageUrl = publicUrlFor(req.file.filename);
     }
 
     const updated = await prisma.event.update({
@@ -205,30 +204,31 @@ app.get(
 
 // Create protocol. EDITOR only. Accepts multipart/form-data with text
 // fields (gremium, title, meetingDate) and a REQUIRED `file` PDF upload.
+//
+// Multer keeps the file in memory; we only push it to R2 after zod passes.
 app.post(
   "/api/protocols",
   requireEditor,
   parseProtocolFile,
   async (req: Request, res: Response<ProtocolDTO | { error: string }>) => {
-    // The PDF is the whole point — reject if missing.
     if (!req.file) {
       return res.status(400).json({ error: "PDF file is required" });
     }
 
     const parsed = ProtocolCreateInput.safeParse(req.body);
     if (!parsed.success) {
-      // Clean up the orphan upload before rejecting.
-      await deleteProtocolFileByUrl(protocolPublicUrl(req.file.filename));
       return res.status(400).json({ error: parsed.error.issues[0].message });
     }
     const data = parsed.data;
+
+    const fileUrl = await storeProtocolFile(req.file);
 
     const protocol = await prisma.protocol.create({
       data: {
         gremium: data.gremium,
         title: data.title,
         meetingDate: new Date(data.meetingDate),
-        fileUrl: protocolPublicUrl(req.file.filename),
+        fileUrl,
       },
     });
 
@@ -251,16 +251,12 @@ app.put(
 
     const parsed = ProtocolUpdateInput.safeParse(req.body);
     if (!parsed.success) {
-      if (req.file)
-        await deleteProtocolFileByUrl(protocolPublicUrl(req.file.filename));
       return res.status(400).json({ error: parsed.error.issues[0].message });
     }
     const data = parsed.data;
 
     const existing = await prisma.protocol.findUnique({ where: { id } });
     if (!existing) {
-      if (req.file)
-        await deleteProtocolFileByUrl(protocolPublicUrl(req.file.filename));
       return res.status(404).json({ error: "Protocol not found" });
     }
 
@@ -275,8 +271,9 @@ app.put(
     if (data.meetingDate !== undefined)
       updatePayload.meetingDate = new Date(data.meetingDate);
     if (req.file) {
+      // Upload first so we don't lose both if R2 upload fails.
+      updatePayload.fileUrl = await storeProtocolFile(req.file);
       await deleteProtocolFileByUrl(existing.fileUrl);
-      updatePayload.fileUrl = protocolPublicUrl(req.file.filename);
     }
 
     const updated = await prisma.protocol.update({

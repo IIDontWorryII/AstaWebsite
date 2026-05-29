@@ -1,29 +1,32 @@
 // server/protocols.crud.test.ts
 //
-// Tests for POST, PUT, DELETE /api/protocols. Read tests live in
-// protocols.test.ts. Mirrors events.crud.test.ts in structure.
-//
-// Strategy:
-//   - One logged-in editorAgent reused across tests for cookie persistence.
-//   - All created rows use title prefix "test-crud-" so afterAll can
-//     clean them up plus any orphan PDFs on disk.
-//   - PDFs are sent as small in-memory buffers (no fixture files needed).
+// Tests for POST, PUT, DELETE /api/protocols. Same mock-the-storage
+// strategy as events.crud.test.ts — never hits real R2.
 
-import { existsSync } from "node:fs";
-import { readdir, unlink } from "node:fs/promises";
-import path from "node:path";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import request from "supertest";
+
+const mockUpload = vi.fn();
+const mockDelete = vi.fn();
+
+vi.mock("./upload/storage.js", () => ({
+  uploadObject: (...args: unknown[]) => mockUpload(...args),
+  deleteObject: (...args: unknown[]) => mockDelete(...args),
+  publicUrl: (key: string) => `https://test-public.r2.dev/${key}`,
+  keyFromPublicUrl: (url: string | null) => {
+    if (!url) return null;
+    const prefix = "https://test-public.r2.dev/";
+    if (!url.startsWith(prefix)) return null;
+    return url.slice(prefix.length);
+  },
+}));
+
 import { app, prisma } from "./app.js";
-import { PROTOCOLS_UPLOAD_DIR } from "./upload/protocols.js";
 
 const ADMIN_EMAIL = "admin@example.com";
 const ADMIN_PASSWORD = "admin12345";
 const TEST_TITLE_PREFIX = "test-crud-";
 
-// Minimal valid PDF (PDF 1.4 with empty page). Multer's filter checks
-// mime type, not magic bytes, so even a small text buffer with the right
-// Content-Type would pass — but using a real PDF makes the test honest.
 const MINIMAL_PDF = Buffer.from(
   "%PDF-1.4\n1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n" +
     "2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n" +
@@ -43,18 +46,15 @@ beforeAll(async () => {
     .expect(200);
 });
 
+beforeEach(() => {
+  mockUpload.mockReset().mockResolvedValue(undefined);
+  mockDelete.mockReset().mockResolvedValue(undefined);
+});
+
 afterAll(async () => {
-  const rows = await prisma.protocol.findMany({
-    where: { title: { startsWith: TEST_TITLE_PREFIX } },
-  });
   await prisma.protocol.deleteMany({
     where: { title: { startsWith: TEST_TITLE_PREFIX } },
   });
-  for (const row of rows) {
-    if (!row.fileUrl) continue;
-    const file = path.join(PROTOCOLS_UPLOAD_DIR, path.basename(row.fileUrl));
-    await unlink(file).catch(() => {});
-  }
   await prisma.$disconnect();
 });
 
@@ -76,6 +76,7 @@ describe("POST /api/protocols", () => {
         contentType: "application/pdf",
       });
     expect(res.status).toBe(401);
+    expect(mockUpload).not.toHaveBeenCalled();
   });
 
   it("rejects with 403 when authenticated as USER role", async () => {
@@ -100,7 +101,7 @@ describe("POST /api/protocols", () => {
     await prisma.user.deleteMany({ where: { email } });
   });
 
-  it("creates a protocol with PDF and writes the file to disk", async () => {
+  it("creates a protocol with PDF and uploads it to storage", async () => {
     const title = uniqueTitle("create");
     const res = await editorAgent
       .post("/api/protocols")
@@ -118,10 +119,15 @@ describe("POST /api/protocols", () => {
       title,
       meetingDate: "2026-04-15T18:00:00.000Z",
     });
-    expect(res.body.fileUrl).toMatch(/^\/uploads\/protocols\/[a-f0-9-]+\.pdf$/);
+    expect(res.body.fileUrl).toMatch(
+      /^https:\/\/test-public\.r2\.dev\/protocols\/[a-f0-9-]+\.pdf$/,
+    );
 
-    const filename = path.basename(res.body.fileUrl);
-    expect(existsSync(path.join(PROTOCOLS_UPLOAD_DIR, filename))).toBe(true);
+    expect(mockUpload).toHaveBeenCalledTimes(1);
+    const [key, buffer, contentType] = mockUpload.mock.calls[0];
+    expect(key).toMatch(/^protocols\/[a-f0-9-]+\.pdf$/);
+    expect(Buffer.isBuffer(buffer)).toBe(true);
+    expect(contentType).toBe("application/pdf");
   });
 
   it("returns 400 when the PDF is missing (file is required)", async () => {
@@ -130,9 +136,9 @@ describe("POST /api/protocols", () => {
       .field("gremium", "ASTA")
       .field("title", uniqueTitle("no-file"))
       .field("meetingDate", "2026-04-15T18:00:00.000Z");
-    // No .attach() — file omitted
     expect(res.status).toBe(400);
     expect(res.body.error).toMatch(/file is required/i);
+    expect(mockUpload).not.toHaveBeenCalled();
   });
 
   it("returns 400 when text fields are missing", async () => {
@@ -144,10 +150,10 @@ describe("POST /api/protocols", () => {
         contentType: "application/pdf",
       });
     expect(res.status).toBe(400);
+    expect(mockUpload).not.toHaveBeenCalled();
   });
 
   it("returns 400 on disallowed mime type (e.g. text/plain)", async () => {
-    const before = await readdir(PROTOCOLS_UPLOAD_DIR);
     const res = await editorAgent
       .post("/api/protocols")
       .field("gremium", "ASTA")
@@ -158,8 +164,7 @@ describe("POST /api/protocols", () => {
         contentType: "text/plain",
       });
     expect(res.status).toBe(400);
-    const after = await readdir(PROTOCOLS_UPLOAD_DIR);
-    expect(after.length).toBe(before.length);
+    expect(mockUpload).not.toHaveBeenCalled();
   });
 });
 
@@ -199,7 +204,7 @@ describe("PUT /api/protocols/:id", () => {
     expect(res.body.gremium).toBe("ASTA");
   });
 
-  it("replaces the PDF and deletes the old file when a new one is uploaded", async () => {
+  it("replaces the PDF and deletes the old object when a new one is uploaded", async () => {
     const original = await editorAgent
       .post("/api/protocols")
       .field("gremium", "STUPA")
@@ -211,8 +216,8 @@ describe("PUT /api/protocols/:id", () => {
       })
       .expect(201);
 
-    const oldFilename = path.basename(original.body.fileUrl);
-    expect(existsSync(path.join(PROTOCOLS_UPLOAD_DIR, oldFilename))).toBe(true);
+    const oldUrl = original.body.fileUrl as string;
+    expect(mockUpload).toHaveBeenCalledTimes(1);
 
     const res = await editorAgent
       .put(`/api/protocols/${original.body.id}`)
@@ -222,10 +227,12 @@ describe("PUT /api/protocols/:id", () => {
       });
 
     expect(res.status).toBe(200);
-    expect(res.body.fileUrl).not.toBe(original.body.fileUrl);
-    expect(existsSync(path.join(PROTOCOLS_UPLOAD_DIR, oldFilename))).toBe(false);
-    const newFilename = path.basename(res.body.fileUrl);
-    expect(existsSync(path.join(PROTOCOLS_UPLOAD_DIR, newFilename))).toBe(true);
+    expect(res.body.fileUrl).not.toBe(oldUrl);
+    expect(mockUpload).toHaveBeenCalledTimes(2);
+    expect(mockDelete).toHaveBeenCalledTimes(1);
+    expect(mockDelete).toHaveBeenCalledWith(
+      oldUrl.replace("https://test-public.r2.dev/", ""),
+    );
   });
 });
 
@@ -240,7 +247,7 @@ describe("DELETE /api/protocols/:id", () => {
     expect(res.status).toBe(404);
   });
 
-  it("returns 204 and removes the row plus the PDF file", async () => {
+  it("returns 204, removes the DB row, and deletes the storage object", async () => {
     const created = await editorAgent
       .post("/api/protocols")
       .field("gremium", "ASTA")
@@ -252,18 +259,20 @@ describe("DELETE /api/protocols/:id", () => {
       })
       .expect(201);
 
-    const filename = path.basename(created.body.fileUrl);
-    expect(existsSync(path.join(PROTOCOLS_UPLOAD_DIR, filename))).toBe(true);
+    const fileUrl = created.body.fileUrl as string;
+    expect(mockUpload).toHaveBeenCalledTimes(1);
 
-    const res = await editorAgent.delete(
-      `/api/protocols/${created.body.id}`,
-    );
+    const res = await editorAgent.delete(`/api/protocols/${created.body.id}`);
     expect(res.status).toBe(204);
 
     const row = await prisma.protocol.findUnique({
       where: { id: created.body.id },
     });
     expect(row).toBeNull();
-    expect(existsSync(path.join(PROTOCOLS_UPLOAD_DIR, filename))).toBe(false);
+
+    expect(mockDelete).toHaveBeenCalledTimes(1);
+    expect(mockDelete).toHaveBeenCalledWith(
+      fileUrl.replace("https://test-public.r2.dev/", ""),
+    );
   });
 });

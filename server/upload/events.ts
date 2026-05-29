@@ -1,38 +1,30 @@
 // server/upload/events.ts
 //
-// Multer configuration for event-poster uploads.
+// Multer configuration for event-poster uploads + helpers that bridge
+// multer's in-memory buffer to R2 storage.
 //
-// What multer does: parses multipart/form-data requests (the format a
-// browser uses when an <input type="file"> is submitted) and either saves
-// the file to disk or hands you the bytes. We use the disk variant — files
-// land in server/uploads/events/ with collision-proof generated names.
-//
-// What we validate:
-//   - Mime type whitelist: only common web image formats. Anything else
-//     is rejected before the file is written.
-//   - Size limit: 5 MB per file. Stops accidental 50 MB uploads from
-//     filling the disk and saves us bandwidth.
-//
-// What we DON'T do here:
-//   - Authentication. The route applies requireEditor before multer runs,
-//     so by the time we get here the request is already authorized.
-//   - Image processing (resize, strip EXIF). Out of scope for AW-36.
+// Pipeline:
+//   1. parseEventPoster (multer)  — parses multipart, validates mime &
+//                                   size, puts bytes into req.file.buffer.
+//                                   No file is written to local disk.
+//   2. Route handler              — calls storeEventPoster(req.file) to
+//                                   upload to R2 and get back the public
+//                                   URL. Stores URL in the DB.
+//   3. deleteEventPosterByUrl     — used on row delete/update to clean
+//                                   up the corresponding object in R2.
 
 import { randomUUID } from "node:crypto";
-import path from "node:path";
-import { unlink } from "node:fs/promises";
 import type { NextFunction, Request, Response } from "express";
 import multer from "multer";
+import {
+  uploadObject,
+  deleteObject,
+  publicUrl,
+  keyFromPublicUrl,
+} from "./storage.js";
 
-/** Absolute path to the directory where event posters are stored. */
-export const EVENTS_UPLOAD_DIR = path.join(
-  process.cwd(),
-  "uploads",
-  "events",
-);
-
-/** Public URL prefix the browser uses to fetch uploaded files. */
-export const EVENTS_PUBLIC_PREFIX = "/uploads/events";
+/** Prefix inside the bucket for event poster files. */
+const KEY_PREFIX = "events";
 
 /** Allowed image mime types — keep this list short and explicit. */
 const ALLOWED_MIME_TYPES = new Set([
@@ -42,54 +34,35 @@ const ALLOWED_MIME_TYPES = new Set([
 ]);
 
 /**
- * Max upload size in bytes — 20 MB. Generous enough for high-res JPEGs
- * and PNG posters straight from a phone (often 5-15 MB). If anyone ever
- * uploads bigger, multer rejects with LIMIT_FILE_SIZE → 413 response.
+ * Max upload size — 20 MB. Generous enough for high-res JPEGs and PNG
+ * posters from a phone (often 5-15 MB).
  */
 const MAX_SIZE_BYTES = 20 * 1024 * 1024;
 
-/**
- * Map a mime type to the file extension we use on disk. We pick the
- * extension from the mime type (not the user-supplied filename) so a
- * malicious "harmless.jpg.exe" name can never reach the filesystem.
- */
+/** Map a mime type to the file extension we use in storage. */
 function extensionForMime(mime: string): string {
   switch (mime) {
     case "image/jpeg":
-      return ".jpg";
+      return "jpg";
     case "image/png":
-      return ".png";
+      return "png";
     case "image/webp":
-      return ".webp";
+      return "webp";
     default:
-      return ".bin"; // never reached — fileFilter rejects unknown mimes first
+      return "bin"; // unreachable — fileFilter rejects unknown mimes first
   }
 }
 
 /**
- * Multer middleware for event poster uploads. Use as:
- *   app.post("/api/events", requireEditor, eventPosterUpload.single("image"),
- *            async (req, res) => { ... });
- *
- * After multer runs, `req.file` holds metadata about the saved file
- * (filename, path, size, mimetype) — undefined if no file was uploaded.
+ * Multer middleware (memory storage). Stores the file as a Buffer on
+ * req.file.buffer rather than writing to local disk — we forward the
+ * buffer to R2 in the route handler.
  */
 export const eventPosterUpload = multer({
-  storage: multer.diskStorage({
-    destination: (_req, _file, cb) => {
-      cb(null, EVENTS_UPLOAD_DIR);
-    },
-    filename: (_req, file, cb) => {
-      // randomUUID gives us a collision-proof name and prevents path-traversal
-      // attacks via crafted filenames (e.g. "../../etc/passwd").
-      cb(null, `${randomUUID()}${extensionForMime(file.mimetype)}`);
-    },
-  }),
+  storage: multer.memoryStorage(),
   limits: { fileSize: MAX_SIZE_BYTES },
   fileFilter: (_req, file, cb) => {
     if (!ALLOWED_MIME_TYPES.has(file.mimetype)) {
-      // Pass an Error to reject the upload; the route's error handler
-      // converts it to a 400 response.
       cb(new Error(`Unsupported file type: ${file.mimetype}`));
       return;
     }
@@ -98,20 +71,9 @@ export const eventPosterUpload = multer({
 });
 
 /**
- * Build the public URL for an uploaded file given its on-disk filename.
- * Stored in the DB's `imageUrl` field and returned to the client.
- */
-export function publicUrlFor(filename: string): string {
-  return `${EVENTS_PUBLIC_PREFIX}/${filename}`;
-}
-
-/**
- * Wraps `eventPosterUpload.single("image")` so multer errors (oversize file,
- * disallowed mime type, etc.) become structured 400 responses rather than
+ * Wraps `eventPosterUpload.single("image")` so multer errors (oversize,
+ * disallowed mime, etc.) become structured 400/413 responses rather than
  * bubbling to Express's default 500 handler.
- *
- * Use this in routes instead of calling multer directly:
- *   app.post("/api/events", requireEditor, parseEventPoster, async (...) => {});
  */
 export function parseEventPoster(
   req: Request,
@@ -123,8 +85,6 @@ export function parseEventPoster(
       next();
       return;
     }
-    // 413 Payload Too Large for size errors; 400 for everything else
-    // (unsupported mime, malformed multipart, etc.).
     const status =
       err instanceof multer.MulterError && err.code === "LIMIT_FILE_SIZE"
         ? 413
@@ -134,19 +94,28 @@ export function parseEventPoster(
 }
 
 /**
- * Delete an uploaded event poster from disk given its public URL.
- * Silently ignores ENOENT (file already gone) — callers don't need to
- * care whether the file existed.
+ * Upload a parsed multer file to R2 and return its public URL.
+ * Caller stores the URL in the DB.
+ *
+ * Throws if the upload fails (route's try/catch will turn it into 500).
+ */
+export async function storeEventPoster(
+  file: Express.Multer.File,
+): Promise<string> {
+  const key = `${KEY_PREFIX}/${randomUUID()}.${extensionForMime(file.mimetype)}`;
+  await uploadObject(key, file.buffer, file.mimetype);
+  return publicUrl(key);
+}
+
+/**
+ * Delete an event poster from R2 given the public URL stored in the DB.
+ * Silent no-op if the URL is null or doesn't belong to our storage
+ * (defensive — old rows or manually edited data shouldn't crash).
  */
 export async function deleteEventPosterByUrl(
-  publicUrl: string | null,
+  storedUrl: string | null,
 ): Promise<void> {
-  if (!publicUrl) return;
-  const filename = path.basename(publicUrl);
-  const onDisk = path.join(EVENTS_UPLOAD_DIR, filename);
-  try {
-    await unlink(onDisk);
-  } catch (err) {
-    if ((err as NodeJS.ErrnoException).code !== "ENOENT") throw err;
-  }
+  const key = keyFromPublicUrl(storedUrl);
+  if (!key) return;
+  await deleteObject(key);
 }

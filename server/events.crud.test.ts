@@ -4,36 +4,48 @@
 // (Read tests live in events.test.ts and cover GET /api/events.)
 //
 // Strategy:
+//   - vi.mock the upload/storage module so tests never hit Cloudflare R2.
+//     The mock's uploadObject / deleteObject are vi.fn() spies we can
+//     assert on. publicUrl returns a deterministic test URL.
 //   - Use supertest.agent() to log in as the seeded admin once and reuse
 //     the cookie across all tests.
 //   - All created events use the test prefix "test-crud-" in their title.
-//     afterAll deletes those rows and any orphan uploaded files so the DB
-//     and disk stay clean between runs.
-//   - File uploads are sent as in-memory buffers (no fixture files needed).
+//     afterAll deletes those rows so the DB stays tidy.
 
-import { existsSync } from "node:fs";
-import { readdir, unlink } from "node:fs/promises";
-import path from "node:path";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import request from "supertest";
+
+// vi.mock is hoisted to the top of the file, so the spy fns must be
+// declared with let bindings that vi.mock's factory can later read.
+const mockUpload = vi.fn();
+const mockDelete = vi.fn();
+
+vi.mock("./upload/storage.js", () => ({
+  uploadObject: (...args: unknown[]) => mockUpload(...args),
+  deleteObject: (...args: unknown[]) => mockDelete(...args),
+  publicUrl: (key: string) => `https://test-public.r2.dev/${key}`,
+  keyFromPublicUrl: (url: string | null) => {
+    if (!url) return null;
+    const prefix = "https://test-public.r2.dev/";
+    if (!url.startsWith(prefix)) return null;
+    return url.slice(prefix.length);
+  },
+}));
+
+// Imports below happen AFTER vi.mock thanks to hoisting.
 import { app, prisma } from "./app.js";
-import { EVENTS_UPLOAD_DIR } from "./upload/events.js";
 
 const ADMIN_EMAIL = "admin@example.com";
 const ADMIN_PASSWORD = "admin12345";
 const TEST_TITLE_PREFIX = "test-crud-";
 
-// A minimal valid 1x1 transparent PNG. Used to exercise the file-upload
-// path without needing a fixture file in the repo.
 const ONE_PIXEL_PNG = Buffer.from(
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==",
   "base64",
 );
 
-// A tiny bogus file with text/plain mime so we can verify the mime filter.
 const PLAIN_TEXT = Buffer.from("not an image");
 
-// One logged-in agent (cookie sticky) reused by all tests.
 const editorAgent = request.agent(app);
 
 beforeAll(async () => {
@@ -43,24 +55,20 @@ beforeAll(async () => {
     .expect(200);
 });
 
+beforeEach(() => {
+  // Reset spy state before each test so call-count assertions are scoped.
+  // Re-set the default resolved value so storeEventPoster works.
+  mockUpload.mockReset().mockResolvedValue(undefined);
+  mockDelete.mockReset().mockResolvedValue(undefined);
+});
+
 afterAll(async () => {
-  // Delete the test events we created.
-  const rows = await prisma.event.findMany({
-    where: { title: { startsWith: TEST_TITLE_PREFIX } },
-  });
   await prisma.event.deleteMany({
     where: { title: { startsWith: TEST_TITLE_PREFIX } },
   });
-  // Best-effort: also delete any image files those events referenced.
-  for (const row of rows) {
-    if (!row.imageUrl) continue;
-    const file = path.join(EVENTS_UPLOAD_DIR, path.basename(row.imageUrl));
-    await unlink(file).catch(() => {});
-  }
   await prisma.$disconnect();
 });
 
-// Small helper: a fresh title each call so tests don't accidentally collide.
 function uniqueTitle(label: string): string {
   return `${TEST_TITLE_PREFIX}${label}-${Date.now()}-${Math.random()
     .toString(36)
@@ -76,10 +84,10 @@ describe("POST /api/events", () => {
       .field("place", "x")
       .field("startsAt", "2026-12-01T18:00:00.000Z");
     expect(res.status).toBe(401);
+    expect(mockUpload).not.toHaveBeenCalled();
   });
 
   it("rejects with 403 when authenticated as a non-EDITOR", async () => {
-    // Create a USER-role account on the fly and reuse its session.
     const userAgent = request.agent(app);
     const email = `test-crud-user-${Date.now()}@example.com`;
     await userAgent
@@ -95,7 +103,6 @@ describe("POST /api/events", () => {
       .field("startsAt", "2026-12-01T18:00:00.000Z");
     expect(res.status).toBe(403);
 
-    // Clean up the throwaway user.
     await prisma.user.deleteMany({ where: { email } });
   });
 
@@ -118,9 +125,11 @@ describe("POST /api/events", () => {
       price: null,
     });
     expect(typeof res.body.id).toBe("string");
+    // No image → no storage interaction.
+    expect(mockUpload).not.toHaveBeenCalled();
   });
 
-  it("creates an event with an image and writes the file to disk", async () => {
+  it("creates an event with an image and uploads it to storage", async () => {
     const title = uniqueTitle("create-with-img");
     const res = await editorAgent
       .post("/api/events")
@@ -134,24 +143,30 @@ describe("POST /api/events", () => {
       });
 
     expect(res.status).toBe(201);
-    expect(res.body.imageUrl).toMatch(/^\/uploads\/events\/[a-f0-9-]+\.png$/);
+    // imageUrl follows the mocked publicUrl shape.
+    expect(res.body.imageUrl).toMatch(
+      /^https:\/\/test-public\.r2\.dev\/events\/[a-f0-9-]+\.png$/,
+    );
 
-    // Verify the file actually exists on disk.
-    const filename = path.basename(res.body.imageUrl);
-    expect(existsSync(path.join(EVENTS_UPLOAD_DIR, filename))).toBe(true);
+    // uploadObject called once with (key, buffer, contentType).
+    expect(mockUpload).toHaveBeenCalledTimes(1);
+    const [key, buffer, contentType] = mockUpload.mock.calls[0];
+    expect(key).toMatch(/^events\/[a-f0-9-]+\.png$/);
+    expect(Buffer.isBuffer(buffer)).toBe(true);
+    expect(contentType).toBe("image/png");
   });
 
   it("rejects with 400 on invalid input (missing required fields)", async () => {
     const res = await editorAgent
       .post("/api/events")
       .field("title", uniqueTitle("invalid"));
-    // description, place, startsAt all missing → zod fails
     expect(res.status).toBe(400);
     expect(res.body.error).toBeDefined();
+    // Validation runs BEFORE storage upload — no storage interaction.
+    expect(mockUpload).not.toHaveBeenCalled();
   });
 
   it("rejects with 400 on disallowed mime type", async () => {
-    const before = await readdir(EVENTS_UPLOAD_DIR);
     const res = await editorAgent
       .post("/api/events")
       .field("title", uniqueTitle("bad-mime"))
@@ -164,9 +179,8 @@ describe("POST /api/events", () => {
       });
 
     expect(res.status).toBe(400);
-    // No new file should have been written.
-    const after = await readdir(EVENTS_UPLOAD_DIR);
-    expect(after.length).toBe(before.length);
+    // multer rejects in fileFilter before our handler runs.
+    expect(mockUpload).not.toHaveBeenCalled();
   });
 });
 
@@ -186,7 +200,6 @@ describe("PUT /api/events/:id", () => {
   });
 
   it("updates only the fields provided (partial update)", async () => {
-    // Create an event first.
     const original = await editorAgent
       .post("/api/events")
       .field("title", uniqueTitle("to-update"))
@@ -195,20 +208,17 @@ describe("PUT /api/events/:id", () => {
       .field("startsAt", "2026-12-01T18:00:00.000Z")
       .expect(201);
 
-    // Update only the title.
     const res = await editorAgent
       .put(`/api/events/${original.body.id}`)
       .field("title", `${original.body.title}-edited`);
 
     expect(res.status).toBe(200);
     expect(res.body.title).toBe(`${original.body.title}-edited`);
-    // Other fields unchanged.
     expect(res.body.description).toBe("Original description");
     expect(res.body.place).toBe("Original place");
   });
 
-  it("replaces the image and deletes the old file when a new image is uploaded", async () => {
-    // Create with an image.
+  it("replaces the image and deletes the old object when a new image is uploaded", async () => {
     const original = await editorAgent
       .post("/api/events")
       .field("title", uniqueTitle("img-replace"))
@@ -221,10 +231,9 @@ describe("PUT /api/events/:id", () => {
       })
       .expect(201);
 
-    const oldFilename = path.basename(original.body.imageUrl);
-    expect(existsSync(path.join(EVENTS_UPLOAD_DIR, oldFilename))).toBe(true);
+    const oldUrl = original.body.imageUrl as string;
+    expect(mockUpload).toHaveBeenCalledTimes(1);
 
-    // Update with a new image.
     const res = await editorAgent
       .put(`/api/events/${original.body.id}`)
       .attach("image", ONE_PIXEL_PNG, {
@@ -233,11 +242,15 @@ describe("PUT /api/events/:id", () => {
       });
 
     expect(res.status).toBe(200);
-    expect(res.body.imageUrl).not.toBe(original.body.imageUrl);
-    // Old file should be gone, new file should exist.
-    expect(existsSync(path.join(EVENTS_UPLOAD_DIR, oldFilename))).toBe(false);
-    const newFilename = path.basename(res.body.imageUrl);
-    expect(existsSync(path.join(EVENTS_UPLOAD_DIR, newFilename))).toBe(true);
+    expect(res.body.imageUrl).not.toBe(oldUrl);
+    // One new upload for the replacement.
+    expect(mockUpload).toHaveBeenCalledTimes(2);
+    // One delete for the old URL.
+    expect(mockDelete).toHaveBeenCalledTimes(1);
+    expect(mockDelete).toHaveBeenCalledWith(
+      // key extracted from oldUrl by mocked keyFromPublicUrl
+      oldUrl.replace("https://test-public.r2.dev/", ""),
+    );
   });
 });
 
@@ -252,7 +265,7 @@ describe("DELETE /api/events/:id", () => {
     expect(res.status).toBe(404);
   });
 
-  it("returns 204 and removes the row plus the image file", async () => {
+  it("returns 204, removes the DB row, and deletes the storage object", async () => {
     const created = await editorAgent
       .post("/api/events")
       .field("title", uniqueTitle("to-delete"))
@@ -265,8 +278,8 @@ describe("DELETE /api/events/:id", () => {
       })
       .expect(201);
 
-    const filename = path.basename(created.body.imageUrl);
-    expect(existsSync(path.join(EVENTS_UPLOAD_DIR, filename))).toBe(true);
+    const imageUrl = created.body.imageUrl as string;
+    expect(mockUpload).toHaveBeenCalledTimes(1);
 
     const res = await editorAgent.delete(`/api/events/${created.body.id}`);
     expect(res.status).toBe(204);
@@ -277,7 +290,10 @@ describe("DELETE /api/events/:id", () => {
     });
     expect(row).toBeNull();
 
-    // File gone from disk.
-    expect(existsSync(path.join(EVENTS_UPLOAD_DIR, filename))).toBe(false);
+    // Storage delete called with the right key.
+    expect(mockDelete).toHaveBeenCalledTimes(1);
+    expect(mockDelete).toHaveBeenCalledWith(
+      imageUrl.replace("https://test-public.r2.dev/", ""),
+    );
   });
 });
