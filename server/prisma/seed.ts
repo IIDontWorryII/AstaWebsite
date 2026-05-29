@@ -1,5 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import { hashPassword } from "../auth/passwords.js";
+import { seedPages } from "./seed-pages.js";
 
 const prisma = new PrismaClient();
 
@@ -92,6 +93,12 @@ async function main() {
     });
   }
   console.log(`Seeded ${ADMINS.length} users`);
+
+  // Gremien pages (asta, stupa, fachschaften) + their sections. Idempotent:
+  // pages are upserted, sections are only created if the page currently has
+  // none (so admin edits survive seed re-runs).
+  const sectionCount = await seedPages(prisma);
+  console.log(`Seeded ${sectionCount} page sections`);
 }
 
 main()

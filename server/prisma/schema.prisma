@@ -50,15 +50,33 @@ model Page {
 }
 
 model PageSection {
-  id       String  @id @default(uuid())
+  id       String          @id @default(uuid())
   order    Int
+  // `kind` tells the frontend how to render the section. Different kinds
+  // surface different field sets in the public view and in the admin
+  // editor (e.g. REFERAT shows photo + holder + email, INFO doesn't).
+  kind     PageSectionKind
   subtitle String?
   body     String?
   imageUrl String?
   caption  String?
   email    String?
   pageId   String
-  page     Page    @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  page     Page            @relation(fields: [pageId], references: [id], onDelete: Cascade)
+}
+
+// Kinds of sections we know how to render. New entries should be added
+// here AND get their own renderer + editor on the frontend.
+//   INFO       — image + body paragraph. One per page (singleton).
+//   REFERAT    — a single Referat card. ASTA has many; UI lets editor
+//                add/remove.
+//   MITGLIEDER — image + body. Used by STUPA for the "Mitglieder" section.
+//   FREEFORM   — subtitle + body. Used by Fachschaften for MIT/WISO.
+enum PageSectionKind {
+  INFO
+  REFERAT
+  MITGLIEDER
+  FREEFORM
 }
 
 model Protocol {
