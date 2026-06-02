@@ -19,6 +19,7 @@ import { useParams } from "react-router-dom";
 import type { PageDTO, PageSectionDTO } from "../../../../../shared/types";
 import {
   addReferatSection,
+  addMemberSection,
   deleteSection,
   fetchPage,
   moveSection,
@@ -27,6 +28,7 @@ import InfoSection from "@/components/gremien/InfoSection";
 import ReferatCard from "@/components/gremien/ReferatCard";
 import MitgliederSection from "@/components/gremien/MitgliederSection";
 import FreeformSection from "@/components/gremien/FreeformSection";
+import MemberCard from "@/components/gremien/MemberCard";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -52,8 +54,30 @@ function renderSectionByKind(section: PageSectionDTO) {
       return <MitgliederSection section={section} />;
     case "FREEFORM":
       return <FreeformSection section={section} />;
+    case "MEMBER":
+      return <MemberCard section={section} />;
   }
 }
+
+/**
+ * Config for the "add a new section" button per page slug. Pages without
+ * an entry here don't get an add button (all their sections are singletons).
+ */
+const ADD_CONFIG: Record<
+  string,
+  { label: string; kind: "REFERAT" | "MEMBER"; placeholder: string }
+> = {
+  asta: {
+    label: "+ Neues Referat hinzufügen",
+    kind: "REFERAT",
+    placeholder: "Neues Referat",
+  },
+  stupa: {
+    label: "+ Neues Mitglied hinzufügen",
+    kind: "MEMBER",
+    placeholder: "Neues Mitglied",
+  },
+};
 
 export default function AdminGremiumPage() {
   const { slug = "asta" } = useParams<{ slug: string }>();
@@ -105,12 +129,20 @@ export default function AdminGremiumPage() {
     }
   }
 
-  async function handleAddReferat() {
+  async function handleAdd() {
+    const config = ADD_CONFIG[slug];
+    if (!config) return;
     try {
-      const created = await addReferatSection(slug, {
-        subtitle: "Neues Referat",
-        body: "Beschreibung hier eintragen…",
-      });
+      const created =
+        config.kind === "REFERAT"
+          ? await addReferatSection(slug, {
+              subtitle: config.placeholder,
+              body: "Beschreibung hier eintragen…",
+            })
+          : await addMemberSection(slug, {
+              subtitle: config.placeholder,
+              caption: "Name eintragen",
+            });
       // Reload to pick up the new section + open it for editing right away.
       const fresh = await fetchPage(slug);
       setPage(fresh);
@@ -135,13 +167,34 @@ export default function AdminGremiumPage() {
     );
   }
 
-  // Find first/last REFERAT positions so we can decide whether to show the
-  // up/down arrows on each one (no point showing "up" on the top REFERAT).
+  // Both REFERAT and MEMBER are reorderable kinds — find the first/last
+  // of each so we can decide whether to show up/down arrows.
   const referateIds = page.sections
     .filter((s) => s.kind === "REFERAT")
     .map((s) => s.id);
   const firstReferatId = referateIds[0];
   const lastReferatId = referateIds[referateIds.length - 1];
+  const memberIds = page.sections
+    .filter((s) => s.kind === "MEMBER")
+    .map((s) => s.id);
+  const firstMemberId = memberIds[0];
+  const lastMemberId = memberIds[memberIds.length - 1];
+
+  function canMoveUp(section: PageSectionDTO): boolean {
+    if (section.kind === "REFERAT") return section.id !== firstReferatId;
+    if (section.kind === "MEMBER") return section.id !== firstMemberId;
+    return false;
+  }
+  function canMoveDown(section: PageSectionDTO): boolean {
+    if (section.kind === "REFERAT") return section.id !== lastReferatId;
+    if (section.kind === "MEMBER") return section.id !== lastMemberId;
+    return false;
+  }
+  function canDelete(section: PageSectionDTO): boolean {
+    return section.kind === "REFERAT" || section.kind === "MEMBER";
+  }
+
+  const addConfig = ADD_CONFIG[slug];
 
   return (
     <div className="max-w-5xl mx-auto px-6 py-8 space-y-8">
@@ -159,25 +212,26 @@ export default function AdminGremiumPage() {
             key={section.id}
             onEdit={() => setEditing(section)}
             onMoveUp={
-              section.kind === "REFERAT" && section.id !== firstReferatId
+              canMoveUp(section)
                 ? () => handleMove(section.id, "up")
                 : undefined
             }
             onMoveDown={
-              section.kind === "REFERAT" && section.id !== lastReferatId
+              canMoveDown(section)
                 ? () => handleMove(section.id, "down")
                 : undefined
             }
             onDelete={
-              section.kind === "REFERAT"
+              canDelete(section)
                 ? () => {
-                    // Confirmation handled via AlertDialog below — but
-                    // for the delete case we render a separate confirm
-                    // dialog rather than inline-confirming here. Simpler
-                    // is to just call handleDelete and rely on the inline
-                    // confirm in EditableSection's host. For now we pop a
-                    // native confirm so we don't have to plumb dialog state.
-                    if (window.confirm(`„${section.subtitle ?? "Referat"}“ wirklich löschen?`)) {
+                    // Browser confirm for now — simpler than plumbing a
+                    // dialog state per row. Upgrade to AlertDialog if AStA
+                    // complains it's ugly.
+                    if (
+                      window.confirm(
+                        `„${section.subtitle ?? "Abschnitt"}“ wirklich löschen?`,
+                      )
+                    ) {
                       handleDelete(section.id);
                     }
                   }
@@ -189,27 +243,27 @@ export default function AdminGremiumPage() {
         ))}
       </div>
 
-      {/* Only ASTA's page can add new sections (Referate). Other pages have
-          fixed sets of singleton sections that can't grow. */}
-      {slug === "asta" && (
+      {/* Pages with an entry in ADD_CONFIG get an "add new section" button.
+          ASTA → Referat, STUPA → Mitglied. Fachschaften has none. */}
+      {addConfig && (
         <div className="border-t border-gray-200 pt-6">
           <AlertDialog>
             <AlertDialogTrigger
               render={
                 <Button variant="outline" className="cursor-pointer">
-                  + Neues Referat hinzufügen
+                  {addConfig.label}
                 </Button>
               }
             />
             <AlertDialogContent>
-              <AlertDialogTitle>Neues Referat anlegen?</AlertDialogTitle>
+              <AlertDialogTitle>{addConfig.placeholder} anlegen?</AlertDialogTitle>
               <AlertDialogDescription>
-                Ein neues, leeres Referat wird am Ende der Liste angelegt. Du
-                kannst es danach direkt bearbeiten.
+                Ein neuer leerer Abschnitt wird am Ende der Liste angelegt. Du
+                kannst ihn danach direkt bearbeiten.
               </AlertDialogDescription>
               <AlertDialogFooter>
                 <AlertDialogCancel>Abbrechen</AlertDialogCancel>
-                <AlertDialogAction onClick={handleAddReferat}>
+                <AlertDialogAction onClick={handleAdd}>
                   Anlegen
                 </AlertDialogAction>
               </AlertDialogFooter>

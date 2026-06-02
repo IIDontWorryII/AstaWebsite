@@ -33,13 +33,24 @@ interface SectionEditorDrawerProps {
 }
 
 function hasImage(kind: string): boolean {
-  return kind === "INFO" || kind === "REFERAT" || kind === "MITGLIEDER";
+  return (
+    kind === "INFO" ||
+    kind === "REFERAT" ||
+    kind === "MITGLIEDER" ||
+    kind === "MEMBER"
+  );
 }
 function hasSubtitle(kind: string): boolean {
-  return kind === "REFERAT" || kind === "MITGLIEDER" || kind === "FREEFORM";
+  return (
+    kind === "REFERAT" ||
+    kind === "MITGLIEDER" ||
+    kind === "FREEFORM" ||
+    kind === "MEMBER"
+  );
 }
 function hasCaption(kind: string): boolean {
-  return kind === "REFERAT";
+  // REFERAT uses caption for holder name; MEMBER uses it for the person's name.
+  return kind === "REFERAT" || kind === "MEMBER";
 }
 function hasEmail(kind: string): boolean {
   return kind === "REFERAT";
@@ -50,7 +61,33 @@ const KIND_LABEL: Record<string, string> = {
   REFERAT: "Referat",
   MITGLIEDER: "Mitglieder",
   FREEFORM: "Abschnitt",
+  MEMBER: "Mitglied",
 };
+
+// The "subtitle" field means different things per kind. The drawer's
+// label should reflect that.
+function subtitleLabel(kind: string): string {
+  switch (kind) {
+    case "REFERAT":
+      return "Titel";
+    case "MEMBER":
+      return "Rolle / Position";
+    default:
+      return "Überschrift";
+  }
+}
+
+// Same for the "caption" field — REFERAT uses it for the holder, MEMBER
+// uses it for the person's name.
+function captionLabel(kind: string): string {
+  switch (kind) {
+    case "MEMBER":
+      return "Name";
+    case "REFERAT":
+    default:
+      return "Inhaber:in";
+  }
+}
 
 export default function SectionEditorDrawer({
   section,
@@ -130,7 +167,7 @@ export default function SectionEditorDrawer({
                     htmlFor="subtitle"
                     className="block text-sm font-semibold mb-1"
                   >
-                    {section.kind === "REFERAT" ? "Titel" : "Überschrift"}
+                    {subtitleLabel(section.kind)}
                   </label>
                   <input
                     id="subtitle"
@@ -148,7 +185,7 @@ export default function SectionEditorDrawer({
                     htmlFor="caption"
                     className="block text-sm font-semibold mb-1"
                   >
-                    Inhaber:in
+                    {captionLabel(section.kind)}
                   </label>
                   <input
                     id="caption"

@@ -44,8 +44,8 @@ export async function updateSection(
 }
 
 /**
- * Add a new section to a page. Only REFERAT is supported by the server —
- * INFO/MITGLIEDER/FREEFORM are singletons and seeded already.
+ * Add a new section to a page. The server only allows multi-instance
+ * kinds (REFERAT, MEMBER) — INFO/MITGLIEDER/FREEFORM are singletons.
  */
 export async function addReferatSection(
   pageSlug: string,
@@ -56,6 +56,20 @@ export async function addReferatSection(
     {
       method: "POST",
       body: JSON.stringify({ kind: "REFERAT", ...initial }),
+    },
+  );
+  return jsonOrThrow<PageSectionDTO>(res, "Failed to add section");
+}
+
+export async function addMemberSection(
+  pageSlug: string,
+  initial: { subtitle?: string; body?: string; caption?: string } = {},
+): Promise<PageSectionDTO> {
+  const res = await apiFetch(
+    `/api/admin/pages/${encodeURIComponent(pageSlug)}/sections`,
+    {
+      method: "POST",
+      body: JSON.stringify({ kind: "MEMBER", ...initial }),
     },
   );
   return jsonOrThrow<PageSectionDTO>(res, "Failed to add section");
