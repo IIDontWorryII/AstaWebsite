@@ -31,6 +31,10 @@ export const PageSectionUpdateInput = z.object({
   body: z.string().min(1).optional(),
   caption: z.string().optional(),
   email: z.string().optional(),
+  // Multipart flag. "true" means "remove the current image" (set imageUrl
+  // to null and delete it from R2). Ignored when a new image file is also
+  // uploaded — a new upload always wins.
+  removeImage: z.string().optional(),
 });
 
 export type PageSectionUpdateInputT = z.infer<typeof PageSectionUpdateInput>;

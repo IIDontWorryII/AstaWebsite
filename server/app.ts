@@ -524,6 +524,10 @@ app.put(
       // Then delete the old image from R2 (only if it was an R2-hosted one;
       // local /referate/* paths are bundled assets, not R2 — silent no-op).
       await deleteSectionImageByUrl(existing.imageUrl);
+    } else if (data.removeImage === "true") {
+      // No new file, but the editor asked to clear the current image.
+      updatePayload.imageUrl = null;
+      await deleteSectionImageByUrl(existing.imageUrl);
     }
 
     const updated = await prisma.pageSection.update({

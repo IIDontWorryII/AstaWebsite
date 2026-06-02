@@ -12,6 +12,7 @@
 import type { EventDTO } from "../../../shared/types";
 import { apiFetch, jsonOrThrow } from "./api";
 import { fetchEvents } from "./api";
+import { compressImage } from "./image";
 
 /** Plain text fields for create/update. Image is uploaded as a separate File. */
 export interface EventFormInput {
@@ -28,15 +29,16 @@ export interface EventFormInput {
  * is the in-browser way to construct a multipart/form-data request, which
  * is the format the server's multer middleware expects.
  */
-function buildFormData(
+async function buildFormData(
   input: Partial<EventFormInput>,
   image?: File | null,
-): FormData {
+): Promise<FormData> {
   const fd = new FormData();
   for (const [key, value] of Object.entries(input)) {
     if (value !== undefined && value !== null) fd.append(key, String(value));
   }
-  if (image) fd.append("image", image);
+  // Downscale/compress large photos before they go on the wire.
+  if (image) fd.append("image", await compressImage(image));
   return fd;
 }
 
@@ -49,7 +51,7 @@ export async function createEvent(
   // apiFetch only sets the JSON header when the body looks like a string.
   const res = await apiFetch("/api/events", {
     method: "POST",
-    body: buildFormData(input, image),
+    body: await buildFormData(input, image),
   });
   return jsonOrThrow<EventDTO>(res, "Failed to create event");
 }
@@ -61,7 +63,7 @@ export async function updateEvent(
 ): Promise<EventDTO> {
   const res = await apiFetch(`/api/events/${encodeURIComponent(id)}`, {
     method: "PUT",
-    body: buildFormData(input, image),
+    body: await buildFormData(input, image),
   });
   return jsonOrThrow<EventDTO>(res, "Failed to update event");
 }

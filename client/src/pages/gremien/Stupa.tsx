@@ -48,7 +48,7 @@ export default function Stupa() {
       {members.length > 0 && (
         <section id="praesidium" className="scroll-mt-20">
           <h2 className="text-2xl font-bold mb-6">Präsidium</h2>
-          <div className="space-y-12">
+          <div className="flex flex-wrap justify-center gap-10">
             {members.map((m) => (
               <MemberCard key={m.id} section={m} />
             ))}

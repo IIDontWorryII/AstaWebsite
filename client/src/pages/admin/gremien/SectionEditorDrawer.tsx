@@ -6,7 +6,8 @@
 //   INFO       → image, body
 //   REFERAT    → image, subtitle (title), caption (holder), body, email
 //   MITGLIEDER → image, subtitle (heading), body
-//   FREEFORM   → subtitle, body
+//   FREEFORM   → image, subtitle, body
+//   MEMBER     → image, subtitle (role), caption (name), body
 //
 // Save calls updateSection() with the edited fields. New image (if picked)
 // rides along; if no new file, the existing image stays.
@@ -37,7 +38,8 @@ function hasImage(kind: string): boolean {
     kind === "INFO" ||
     kind === "REFERAT" ||
     kind === "MITGLIEDER" ||
-    kind === "MEMBER"
+    kind === "MEMBER" ||
+    kind === "FREEFORM"
   );
 }
 function hasSubtitle(kind: string): boolean {
@@ -100,6 +102,7 @@ export default function SectionEditorDrawer({
   const [caption, setCaption] = useState("");
   const [email, setEmail] = useState("");
   const [file, setFile] = useState<File | null>(null);
+  const [removeImage, setRemoveImage] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [submitting, setSubmitting] = useState(false);
@@ -113,6 +116,7 @@ export default function SectionEditorDrawer({
       setCaption(section.caption ?? "");
       setEmail(section.email ?? "");
       setFile(null);
+      setRemoveImage(false);
       setError(null);
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
@@ -139,7 +143,12 @@ export default function SectionEditorDrawer({
       if (hasCaption(section.kind)) updates.caption = caption;
       if (hasEmail(section.kind)) updates.email = email;
 
-      const updated = await updateSection(section.id, updates, file);
+      const updated = await updateSection(
+        section.id,
+        updates,
+        file,
+        removeImage,
+      );
       onClose(updated);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Speichern fehlgeschlagen");
@@ -250,20 +259,42 @@ export default function SectionEditorDrawer({
                     ref={fileInputRef}
                     type="file"
                     accept="image/png,image/jpeg,image/webp"
-                    onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+                    onChange={(e) => {
+                      setFile(e.target.files?.[0] ?? null);
+                      // Picking a new file overrides a pending removal.
+                      if (e.target.files?.[0]) setRemoveImage(false);
+                    }}
                     className="block w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-gray-100 file:cursor-pointer hover:file:bg-gray-200"
                   />
-                  {section.imageUrl && !file && (
-                    <p className="text-xs text-gray-500 mt-2">
-                      Aktuell:
-                    </p>
+                  {section.imageUrl && !file && !removeImage && (
+                    <>
+                      <p className="text-xs text-gray-500 mt-2">Aktuell:</p>
+                      <img
+                        src={section.imageUrl}
+                        alt="aktuell"
+                        className="mt-1 max-h-32 rounded border border-gray-200"
+                      />
+                      <label className="flex items-center gap-2 mt-2 text-sm text-gray-700 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={removeImage}
+                          onChange={(e) => setRemoveImage(e.target.checked)}
+                        />
+                        Bild entfernen
+                      </label>
+                    </>
                   )}
-                  {section.imageUrl && !file && (
-                    <img
-                      src={section.imageUrl}
-                      alt="aktuell"
-                      className="mt-1 max-h-32 rounded border border-gray-200"
-                    />
+                  {section.imageUrl && removeImage && (
+                    <p className="text-xs text-red-600 mt-2">
+                      Bild wird beim Speichern entfernt.{" "}
+                      <button
+                        type="button"
+                        className="underline cursor-pointer"
+                        onClick={() => setRemoveImage(false)}
+                      >
+                        Rückgängig
+                      </button>
+                    </p>
                   )}
                 </div>
               )}

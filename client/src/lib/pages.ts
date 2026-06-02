@@ -6,6 +6,7 @@
 
 import type { PageDTO, PageSectionDTO } from "../../../shared/types";
 import { apiFetch, jsonOrThrow } from "./api";
+import { compressImage } from "./image";
 
 export async function fetchPage(slug: string): Promise<PageDTO> {
   const res = await apiFetch(`/api/pages/${encodeURIComponent(slug)}`);
@@ -24,17 +25,22 @@ export interface SectionUpdateInput {
  * Update a section. Multipart so an optional new image can ride along.
  * Empty-string text fields are interpreted by the server as "clear this
  * field" — pass `""` to remove an existing subtitle / caption / email.
+ *
+ * `removeImage: true` clears the current image (set null + delete from R2).
+ * A new `image` upload always takes precedence over removeImage.
  */
 export async function updateSection(
   id: string,
   input: SectionUpdateInput,
   image?: File | null,
+  removeImage?: boolean,
 ): Promise<PageSectionDTO> {
   const fd = new FormData();
   for (const [key, value] of Object.entries(input)) {
     if (value !== undefined) fd.append(key, value);
   }
-  if (image) fd.append("image", image);
+  if (image) fd.append("image", await compressImage(image));
+  else if (removeImage) fd.append("removeImage", "true");
 
   const res = await apiFetch(`/api/admin/sections/${encodeURIComponent(id)}`, {
     method: "PUT",

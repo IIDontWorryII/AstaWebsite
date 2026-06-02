@@ -23,7 +23,18 @@ export default function FreeformSection({ section }: FreeformSectionProps) {
   return (
     <section id={anchorId} className="scroll-mt-20">
       <h2 className="text-2xl font-bold mb-4">{section.subtitle ?? ""}</h2>
-      <p className="text-gray-700 whitespace-pre-line">{section.body}</p>
+      {section.imageUrl ? (
+        <div className="grid md:grid-cols-2 gap-8 items-start">
+          <img
+            src={section.imageUrl}
+            alt={section.subtitle ?? "Fachschaft"}
+            className="rounded-lg w-full"
+          />
+          <p className="text-gray-700 whitespace-pre-line">{section.body}</p>
+        </div>
+      ) : (
+        <p className="text-gray-700 whitespace-pre-line">{section.body}</p>
+      )}
     </section>
   );
 }

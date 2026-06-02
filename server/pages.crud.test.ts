@@ -196,6 +196,38 @@ describe("PUT /api/admin/sections/:id", () => {
     expect(mockDelete).toHaveBeenCalledTimes(1);
   });
 
+  it("removes the current image when removeImage=true is sent", async () => {
+    // Throwaway REFERAT with an R2 image to delete.
+    const created = await editorAgent
+      .post("/api/admin/pages/asta/sections")
+      .send({
+        kind: "REFERAT",
+        subtitle: uniqueSubtitle("rm-img"),
+        body: "x",
+      })
+      .expect(201);
+    const sectionId = created.body.id;
+
+    // Give it an R2-hosted image first.
+    const withImage = await editorAgent
+      .put(`/api/admin/sections/${sectionId}`)
+      .attach("image", ONE_PIXEL_PNG, {
+        filename: "x.png",
+        contentType: "image/png",
+      })
+      .expect(200);
+    expect(withImage.body.imageUrl).not.toBeNull();
+
+    // Now clear it via the removeImage flag (no file attached).
+    const cleared = await editorAgent
+      .put(`/api/admin/sections/${sectionId}`)
+      .field("removeImage", "true")
+      .expect(200);
+    expect(cleared.body.imageUrl).toBeNull();
+    // The old R2 object should have been deleted.
+    expect(mockDelete).toHaveBeenCalledTimes(1);
+  });
+
   it("clears optional fields when empty string is sent", async () => {
     const page = await fetchAsta();
     const referat = page.sections.find((s) => s.kind === "REFERAT");
