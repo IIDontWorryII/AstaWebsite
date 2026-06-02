@@ -3,7 +3,6 @@
 // Renders one MEMBER section: an individual person's portrait card.
 //   subtitle → role / function ("Präsident")
 //   caption  → person's name ("Patrick Maas")
-//   body     → optional short bio
 //
 // Compact vertical card (same photo size as ReferatCard): circular photo
 // on top, name + role centered underneath. Meant to sit in a centered
@@ -30,11 +29,6 @@ export default function MemberCard({ section }: MemberCardProps) {
       )}
       {section.subtitle && (
         <p className="text-sm text-gray-600">{section.subtitle}</p>
-      )}
-      {section.body && (
-        <p className="text-sm text-gray-700 leading-relaxed mt-2 whitespace-pre-line">
-          {section.body}
-        </p>
       )}
     </article>
   );

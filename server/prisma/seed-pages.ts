@@ -65,9 +65,20 @@ const STUPA_INFO_BODY =
   "euer Campus, also nutzt die Chance etwas zu tun, um die Dinge zu verändern, die ihr anders haben " +
   "wollt.";
 
-const STUPA_MITGLIEDER_BODY =
-  "Patrick Maas (Präsident) Simon Knudsen, Leon Schneider, Jens Hidien, Lars Bockheiser, " +
-  "Manuel Lenz, Annika Schlag, Lou Stahl, Chiara Vogt, Bastian Langenbach.";
+// StuPa members beyond the Präsidium (Präsident + Vize). Seeded as
+// individual MEMBER cards so they render in the wrapping "Mitglieder" row
+// below the leadership. Photos can be added per member via admin.
+const STUPA_MEMBER_NAMES = [
+  "Simon Knudsen",
+  "Leon Schneider",
+  "Jens Hidien",
+  "Lars Bockheiser",
+  "Manuel Lenz",
+  "Annika Schlag",
+  "Lou Stahl",
+  "Chiara Vogt",
+  "Bastian Langenbach",
+];
 
 const FACHSCHAFTEN_INFO_BODY =
   "Liebe Studierende, wir, die Fachschaftsräte WISO und MuT, sind dafür zuständig die Interessen der " +
@@ -223,27 +234,28 @@ const PAGES: SeedPage[] = [
     sections: [
       // INFO now has a team photo, mirroring the AStA info layout.
       { kind: "INFO", body: STUPA_INFO_BODY, imageUrl: "/stupa-team.jpg" },
-      // Two individual member portraits between INFO and the bulk member list.
-      // Editable: admin can replace the photo, edit role/name/bio.
+      // All members are MEMBER cards (name + role only). The first two are
+      // the Präsidium (top row); the rest wrap in the row below. Editable:
+      // admin can reorder, add/remove members, and set per-member photos.
       {
         kind: "MEMBER",
         subtitle: "Präsident",
         caption: "Patrick Maas",
         imageUrl: "/stupa-team.jpg",
-        body: "Präsident des StuPa des RheinAhrCampus.",
       },
       {
         kind: "MEMBER",
         subtitle: "Vizepräsident",
         caption: "(Name eintragen)",
         imageUrl: "/stupa-team.jpg",
-        body: "Stellvertreter des Präsidenten.",
       },
-      {
-        kind: "MITGLIEDER",
-        subtitle: "Weitere Mitglieder",
-        body: STUPA_MITGLIEDER_BODY,
-      },
+      ...STUPA_MEMBER_NAMES.map(
+        (name): SeedSection => ({
+          kind: "MEMBER",
+          subtitle: "Mitglied",
+          caption: name,
+        }),
+      ),
     ],
   },
   {

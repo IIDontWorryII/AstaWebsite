@@ -7,7 +7,7 @@
 //   REFERAT    → image, subtitle (title), caption (holder), body, email
 //   MITGLIEDER → image, subtitle (heading), body
 //   FREEFORM   → image, subtitle, body
-//   MEMBER     → image, subtitle (role), caption (name), body
+//   MEMBER     → image, subtitle (role), caption (name)
 //
 // Save calls updateSection() with the edited fields. New image (if picked)
 // rides along; if no new file, the existing image stays.
@@ -53,6 +53,10 @@ function hasSubtitle(kind: string): boolean {
 function hasCaption(kind: string): boolean {
   // REFERAT uses caption for holder name; MEMBER uses it for the person's name.
   return kind === "REFERAT" || kind === "MEMBER";
+}
+function hasBody(kind: string): boolean {
+  // MEMBER cards only show name + role — no free-text body.
+  return kind !== "MEMBER";
 }
 function hasEmail(kind: string): boolean {
   return kind === "REFERAT";
@@ -139,7 +143,7 @@ export default function SectionEditorDrawer({
         email?: string;
       } = {};
       if (hasSubtitle(section.kind)) updates.subtitle = subtitle;
-      updates.body = body;
+      if (hasBody(section.kind)) updates.body = body;
       if (hasCaption(section.kind)) updates.caption = caption;
       if (hasEmail(section.kind)) updates.email = email;
 
@@ -207,22 +211,24 @@ export default function SectionEditorDrawer({
                 </div>
               )}
 
-              <div>
-                <label
-                  htmlFor="body"
-                  className="block text-sm font-semibold mb-1"
-                >
-                  Text
-                </label>
-                <textarea
-                  id="body"
-                  rows={10}
-                  required
-                  value={body}
-                  onChange={(e) => setBody(e.target.value)}
-                  className="w-full border border-gray-300 rounded px-3 py-2 font-sans"
-                />
-              </div>
+              {hasBody(section.kind) && (
+                <div>
+                  <label
+                    htmlFor="body"
+                    className="block text-sm font-semibold mb-1"
+                  >
+                    Text
+                  </label>
+                  <textarea
+                    id="body"
+                    rows={10}
+                    required
+                    value={body}
+                    onChange={(e) => setBody(e.target.value)}
+                    className="w-full border border-gray-300 rounded px-3 py-2 font-sans"
+                  />
+                </div>
+              )}
 
               {hasEmail(section.kind) && (
                 <div>

@@ -191,7 +191,14 @@ export default function AdminGremiumPage() {
     return false;
   }
   function canDelete(section: PageSectionDTO): boolean {
-    return section.kind === "REFERAT" || section.kind === "MEMBER";
+    // REFERAT/MEMBER are multi-instance and freely deletable. MITGLIEDER is
+    // a legacy STUPA text block we've replaced with member cards — allow
+    // deleting it so editors can remove the leftover.
+    return (
+      section.kind === "REFERAT" ||
+      section.kind === "MEMBER" ||
+      section.kind === "MITGLIEDER"
+    );
   }
 
   const addConfig = ADD_CONFIG[slug];
