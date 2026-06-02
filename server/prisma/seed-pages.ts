@@ -13,9 +13,9 @@
 import type { PrismaClient } from "@prisma/client";
 
 type SeedSection = {
-  kind: "INFO" | "REFERAT" | "MITGLIEDER" | "FREEFORM";
+  kind: "INFO" | "REFERAT" | "MITGLIEDER" | "FREEFORM" | "MEMBER";
   subtitle?: string;
-  body: string;
+  body?: string;
   imageUrl?: string;
   caption?: string;
   email?: string;
@@ -221,12 +221,28 @@ const PAGES: SeedPage[] = [
     slug: "stupa",
     title: "StuPa",
     sections: [
-      { kind: "INFO", body: STUPA_INFO_BODY },
+      // INFO now has a team photo, mirroring the AStA info layout.
+      { kind: "INFO", body: STUPA_INFO_BODY, imageUrl: "/stupa-team.jpg" },
+      // Two individual member portraits between INFO and the bulk member list.
+      // Editable: admin can replace the photo, edit role/name/bio.
+      {
+        kind: "MEMBER",
+        subtitle: "Präsident",
+        caption: "Patrick Maas",
+        imageUrl: "/stupa-team.jpg",
+        body: "Präsident des StuPa des RheinAhrCampus.",
+      },
+      {
+        kind: "MEMBER",
+        subtitle: "Vizepräsident",
+        caption: "(Name eintragen)",
+        imageUrl: "/stupa-team.jpg",
+        body: "Stellvertreter des Präsidenten.",
+      },
       {
         kind: "MITGLIEDER",
-        subtitle: "Mitglieder",
+        subtitle: "Weitere Mitglieder",
         body: STUPA_MITGLIEDER_BODY,
-        imageUrl: "/stupa-team.jpg",
       },
     ],
   },
@@ -271,7 +287,7 @@ export async function seedPages(prisma: PrismaClient): Promise<number> {
           order: i,
           kind: s.kind,
           subtitle: s.subtitle ?? null,
-          body: s.body,
+          body: s.body ?? null,
           imageUrl: s.imageUrl ?? null,
           caption: s.caption ?? null,
           email: s.email ?? null,

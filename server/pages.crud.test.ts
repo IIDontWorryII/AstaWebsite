@@ -153,35 +153,41 @@ describe("PUT /api/admin/sections/:id", () => {
   });
 
   it("uploads new image to storage and deletes the old one (if it was an R2 URL)", async () => {
-    // Find a REFERAT section — those have an imageUrl. The seed uses local
-    // /referate/* paths which our mocked keyFromPublicUrl returns null for,
-    // so deleteObject won't be called for those. We assert on uploadObject
-    // only here. (The events tests cover the "delete old R2 image" path.)
-    const page = await fetchAsta();
-    const referat = page.sections.find((s) => s.kind === "REFERAT");
-    if (!referat) throw new Error("expected at least one REFERAT in ASTA");
+    // Use a throwaway REFERAT so this test isn't affected by other tests
+    // mutating the seeded sections' imageUrls between runs.
+    const created = await editorAgent
+      .post("/api/admin/pages/asta/sections")
+      .send({
+        kind: "REFERAT",
+        subtitle: uniqueSubtitle("img-test"),
+        body: "x",
+      })
+      .expect(201);
+    const sectionId = created.body.id;
 
+    // First upload: no prior image at all → uploadObject called, delete is
+    // not called (server skips delete when there's no existing url).
     const res = await editorAgent
-      .put(`/api/admin/sections/${referat.id}`)
+      .put(`/api/admin/sections/${sectionId}`)
       .attach("image", ONE_PIXEL_PNG, {
         filename: "x.png",
         contentType: "image/png",
       });
-
     expect(res.status).toBe(200);
     expect(res.body.imageUrl).toMatch(
       /^https:\/\/test-public\.r2\.dev\/page-sections\/[a-f0-9-]+\.png$/,
     );
     expect(mockUpload).toHaveBeenCalledTimes(1);
+    expect(mockDelete).toHaveBeenCalledTimes(0);
+
     const [key, buffer, contentType] = mockUpload.mock.calls[0];
     expect(key).toMatch(/^page-sections\/[a-f0-9-]+\.png$/);
     expect(Buffer.isBuffer(buffer)).toBe(true);
     expect(contentType).toBe("image/png");
 
-    // Now do a second update — old imageUrl IS an R2 URL → deleteObject
-    // should be called.
+    // Second upload: existing url IS now an R2 URL → deleteObject called.
     const res2 = await editorAgent
-      .put(`/api/admin/sections/${referat.id}`)
+      .put(`/api/admin/sections/${sectionId}`)
       .attach("image", ONE_PIXEL_PNG, {
         filename: "y.png",
         contentType: "image/png",
@@ -232,6 +238,27 @@ describe("POST /api/admin/pages/:slug/sections", () => {
       .post("/api/admin/pages/does-not-exist/sections")
       .send({ kind: "REFERAT" });
     expect(res.status).toBe(404);
+  });
+
+  it("creates a new MEMBER section (used for STUPA president/vice-president portraits)", async () => {
+    const before = await request(app).get("/api/pages/stupa").expect(200);
+    const lastOrder = before.body.sections[before.body.sections.length - 1].order;
+    const subtitle = uniqueSubtitle("member");
+
+    const res = await editorAgent
+      .post("/api/admin/pages/stupa/sections")
+      .send({
+        kind: "MEMBER",
+        subtitle,
+        caption: "Test Person",
+        body: "Test bio",
+      });
+
+    expect(res.status).toBe(201);
+    expect(res.body.kind).toBe("MEMBER");
+    expect(res.body.subtitle).toBe(subtitle);
+    expect(res.body.caption).toBe("Test Person");
+    expect(res.body.order).toBe(lastOrder + 1);
   });
 
   it("creates a new REFERAT appended to the end of the page", async () => {

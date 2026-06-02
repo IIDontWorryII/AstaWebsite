@@ -552,10 +552,13 @@ app.post(
     }
     const data = parsed.data;
 
-    if (data.kind !== "REFERAT") {
-      return res
-        .status(400)
-        .json({ error: "Only REFERAT sections can be added via this route" });
+    // REFERAT and MEMBER are the only multi-instance kinds. INFO,
+    // MITGLIEDER, FREEFORM are singletons and can't be created via this
+    // route — they're seeded once and edited in place.
+    if (data.kind !== "REFERAT" && data.kind !== "MEMBER") {
+      return res.status(400).json({
+        error: "Only REFERAT or MEMBER sections can be added via this route",
+      });
     }
 
     const page = await prisma.page.findUnique({ where: { slug } });

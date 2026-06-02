@@ -58,11 +58,18 @@ export interface ProtocolDTO {
 /**
  * Kinds of section a Gremium page can hold. Mirrors the Prisma enum.
  * - INFO       — page intro: image + body paragraph. Singleton per page.
- * - REFERAT    — a Referat card (ASTA-specific): photo + holder + body + email.
- * - MITGLIEDER — image + body (STUPA's Mitglieder block).
+ * - REFERAT    — a Referat card (ASTA-specific): photo + role + holder + body + email.
+ * - MITGLIEDER — image + body (STUPA's bulk member-list block).
  * - FREEFORM   — subtitle + body (Fachschaften's MIT/WiSo sections).
+ * - MEMBER     — individual member portrait: photo + role + name + optional bio.
+ *                Used by STUPA for Präsident / Vizepräsident.
  */
-export type PageSectionKind = "INFO" | "REFERAT" | "MITGLIEDER" | "FREEFORM";
+export type PageSectionKind =
+  | "INFO"
+  | "REFERAT"
+  | "MITGLIEDER"
+  | "FREEFORM"
+  | "MEMBER";
 
 /** A single section inside a Gremium page. */
 export interface PageSectionDTO {

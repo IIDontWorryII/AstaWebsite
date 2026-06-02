@@ -70,13 +70,19 @@ model PageSection {
 //   INFO       — image + body paragraph. One per page (singleton).
 //   REFERAT    — a single Referat card. ASTA has many; UI lets editor
 //                add/remove.
-//   MITGLIEDER — image + body. Used by STUPA for the "Mitglieder" section.
+//   MITGLIEDER — image + body. Used by STUPA for the bulk "Mitglieder"
+//                text block (list of names in one paragraph).
 //   FREEFORM   — subtitle + body. Used by Fachschaften for MIT/WISO.
+//   MEMBER     — individual member portrait card: photo + role (subtitle)
+//                + name (caption) + optional bio (body). Used by STUPA
+//                for Präsident / Vizepräsident; can be reused anywhere
+//                an individual person needs to be showcased.
 enum PageSectionKind {
   INFO
   REFERAT
   MITGLIEDER
   FREEFORM
+  MEMBER
 }
 
 model Protocol {

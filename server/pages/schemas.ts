@@ -13,6 +13,7 @@ export const PageSectionKind = z.enum([
   "REFERAT",
   "MITGLIEDER",
   "FREEFORM",
+  "MEMBER",
 ]);
 export type PageSectionKindT = z.infer<typeof PageSectionKind>;
 
