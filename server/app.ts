@@ -18,6 +18,8 @@ import type {
   ProtocolDTO,
   HealthResponse,
   AuthResponse,
+  PageDTO,
+  PageSectionDTO,
 } from "../shared/types.js";
 import { hashPassword, verifyPassword } from "./auth/passwords.js";
 import { signToken } from "./auth/tokens.js";
@@ -41,6 +43,16 @@ import {
   ProtocolUpdateInput,
 } from "./protocols/schemas.js";
 import { toProtocolDTO } from "./protocols/dto.js";
+import {
+  PageSectionCreateInput,
+  PageSectionUpdateInput,
+} from "./pages/schemas.js";
+import { toPageDTO, toPageSectionDTO } from "./pages/dto.js";
+import {
+  deleteSectionImageByUrl,
+  parseSectionImage,
+  storeSectionImage,
+} from "./upload/sectionImages.js";
 
 export const prisma = new PrismaClient();
 export const app = express();
@@ -435,6 +447,225 @@ app.get(
         createdAt: user.createdAt.toISOString(),
       },
     });
+  },
+);
+
+// ─── Gremium pages (read) ──────────────────────────────────────────────
+
+// Public: fetch a single Gremium page with all its sections, ordered.
+app.get(
+  "/api/pages/:slug",
+  async (
+    req: Request<{ slug: string }>,
+    res: Response<PageDTO | { error: string }>,
+  ) => {
+    const { slug } = req.params;
+    const page = await prisma.page.findUnique({
+      where: { slug },
+      include: { sections: { orderBy: { order: "asc" } } },
+    });
+    if (!page) {
+      return res.status(404).json({ error: "Page not found" });
+    }
+    return res.json(toPageDTO(page));
+  },
+);
+
+// ─── Gremium page section editing (admin only) ─────────────────────────
+
+// Update a section's editable fields. Multipart so an optional new image
+// can ride along. Text fields not present in the body are left unchanged;
+// EMPTY STRINGS on optional fields (subtitle/caption/email) are treated
+// as "clear this field" → null in the DB. body cannot be cleared (the
+// section would render empty).
+app.put(
+  "/api/admin/sections/:id",
+  requireEditor,
+  parseSectionImage,
+  async (
+    req: Request<{ id: string }>,
+    res: Response<PageSectionDTO | { error: string }>,
+  ) => {
+    const { id } = req.params;
+
+    const parsed = PageSectionUpdateInput.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: parsed.error.issues[0].message });
+    }
+    const data = parsed.data;
+
+    const existing = await prisma.pageSection.findUnique({ where: { id } });
+    if (!existing) {
+      return res.status(404).json({ error: "Section not found" });
+    }
+
+    // Build the update payload conditionally. For optional text fields,
+    // empty string means "set null", a real value means "set string".
+    const updatePayload: {
+      subtitle?: string | null;
+      body?: string;
+      caption?: string | null;
+      email?: string | null;
+      imageUrl?: string | null;
+    } = {};
+    if (data.subtitle !== undefined) {
+      updatePayload.subtitle = data.subtitle === "" ? null : data.subtitle;
+    }
+    if (data.body !== undefined) updatePayload.body = data.body;
+    if (data.caption !== undefined) {
+      updatePayload.caption = data.caption === "" ? null : data.caption;
+    }
+    if (data.email !== undefined) {
+      updatePayload.email = data.email === "" ? null : data.email;
+    }
+    if (req.file) {
+      // Upload new image first so we don't lose both if R2 fails.
+      updatePayload.imageUrl = await storeSectionImage(req.file);
+      // Then delete the old image from R2 (only if it was an R2-hosted one;
+      // local /referate/* paths are bundled assets, not R2 — silent no-op).
+      await deleteSectionImageByUrl(existing.imageUrl);
+    }
+
+    const updated = await prisma.pageSection.update({
+      where: { id },
+      data: updatePayload,
+    });
+    return res.json(toPageSectionDTO(updated));
+  },
+);
+
+// Add a new section to a page. Only REFERAT is supported via this route —
+// INFO/MITGLIEDER/FREEFORM are singletons (the schema doesn't enforce that
+// but the UI should and we reject other kinds here as a backstop).
+app.post(
+  "/api/admin/pages/:slug/sections",
+  requireEditor,
+  async (
+    req: Request<{ slug: string }>,
+    res: Response<PageSectionDTO | { error: string }>,
+  ) => {
+    const { slug } = req.params;
+
+    const parsed = PageSectionCreateInput.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: parsed.error.issues[0].message });
+    }
+    const data = parsed.data;
+
+    if (data.kind !== "REFERAT") {
+      return res
+        .status(400)
+        .json({ error: "Only REFERAT sections can be added via this route" });
+    }
+
+    const page = await prisma.page.findUnique({ where: { slug } });
+    if (!page) {
+      return res.status(404).json({ error: "Page not found" });
+    }
+
+    // Append to the end of the page's sections.
+    const last = await prisma.pageSection.findFirst({
+      where: { pageId: page.id },
+      orderBy: { order: "desc" },
+    });
+    const nextOrder = (last?.order ?? -1) + 1;
+
+    const created = await prisma.pageSection.create({
+      data: {
+        pageId: page.id,
+        order: nextOrder,
+        kind: data.kind,
+        subtitle: data.subtitle ?? null,
+        body: data.body ?? null,
+        caption: data.caption ?? null,
+        email: data.email ?? null,
+      },
+    });
+    return res.status(201).json(toPageSectionDTO(created));
+  },
+);
+
+// Delete a section. Also cleans up the section's image in R2 if it's
+// an R2-hosted URL (bundled local /referate/* paths are no-op).
+app.delete(
+  "/api/admin/sections/:id",
+  requireEditor,
+  async (
+    req: Request<{ id: string }>,
+    res: Response<{ error: string } | undefined>,
+  ) => {
+    const { id } = req.params;
+    const existing = await prisma.pageSection.findUnique({ where: { id } });
+    if (!existing) {
+      return res.status(404).json({ error: "Section not found" });
+    }
+
+    await prisma.pageSection.delete({ where: { id } });
+    await deleteSectionImageByUrl(existing.imageUrl);
+
+    return res.status(204).send();
+  },
+);
+
+// Reorder a section by swapping its `order` with the adjacent neighbor.
+// Direction is "up" (towards lower order) or "down" (higher order).
+// No-op at the edges (already first / last on the page).
+app.post(
+  "/api/admin/sections/:id/move",
+  requireEditor,
+  async (
+    req: Request<{ id: string }>,
+    res: Response<PageSectionDTO[] | { error: string }>,
+  ) => {
+    const { id } = req.params;
+    const direction = req.body?.direction;
+    if (direction !== "up" && direction !== "down") {
+      return res
+        .status(400)
+        .json({ error: "direction must be 'up' or 'down'" });
+    }
+
+    const section = await prisma.pageSection.findUnique({ where: { id } });
+    if (!section) {
+      return res.status(404).json({ error: "Section not found" });
+    }
+
+    // Find the neighbor in the requested direction.
+    const neighbor = await prisma.pageSection.findFirst({
+      where: {
+        pageId: section.pageId,
+        order: direction === "up" ? { lt: section.order } : { gt: section.order },
+      },
+      orderBy: { order: direction === "up" ? "desc" : "asc" },
+    });
+    if (!neighbor) {
+      // Already at the edge — return the page's sections unchanged so
+      // the client can re-render without special-casing.
+      const sections = await prisma.pageSection.findMany({
+        where: { pageId: section.pageId },
+        orderBy: { order: "asc" },
+      });
+      return res.json(sections.map(toPageSectionDTO));
+    }
+
+    // Swap orders inside a transaction so we never end up with two
+    // sections sharing the same order value mid-way.
+    await prisma.$transaction([
+      prisma.pageSection.update({
+        where: { id: section.id },
+        data: { order: neighbor.order },
+      }),
+      prisma.pageSection.update({
+        where: { id: neighbor.id },
+        data: { order: section.order },
+      }),
+    ]);
+
+    const sections = await prisma.pageSection.findMany({
+      where: { pageId: section.pageId },
+      orderBy: { order: "asc" },
+    });
+    return res.json(sections.map(toPageSectionDTO));
   },
 );
 
