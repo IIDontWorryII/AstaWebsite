@@ -77,7 +77,7 @@ describe("Header", () => {
     expect(anchor).toHaveAttribute("href", "/signup");
   });
 
-  it("shows the user's display name and a Logout button when logged in", () => {
+  it("shows the profile link and a Logout button when logged in", () => {
     mockUseAuth.mockReturnValue({
       user: {
         id: "user-1",
@@ -98,10 +98,13 @@ describe("Header", () => {
       </MemoryRouter>,
     );
 
-    // Display name is a Link to /profile.
-    const profileLink = screen.getByRole("link", { name: "Testuser" });
+    // Profile is a Link to /profile labelled "Mein Profil".
+    const profileLink = screen.getByRole("link", { name: "Mein Profil" });
     expect(profileLink).toBeInTheDocument();
     expect(profileLink).toHaveAttribute("href", "/profile");
+
+    // A plain USER does not see the EDITOR-only Admin link.
+    expect(screen.queryByRole("link", { name: "Admin" })).not.toBeInTheDocument();
 
     // Logout button present.
     expect(screen.getByRole("button", { name: "Logout" })).toBeInTheDocument();
@@ -109,6 +112,31 @@ describe("Header", () => {
     // Logged-out controls should be gone.
     expect(screen.queryByRole("link", { name: "Login" })).not.toBeInTheDocument();
     expect(screen.queryByText("Registrieren")).not.toBeInTheDocument();
+  });
+
+  it("shows an Admin link for EDITOR users", () => {
+    mockUseAuth.mockReturnValue({
+      user: {
+        id: "editor-1",
+        email: "editor@example.com",
+        displayName: "Editor",
+        role: "EDITOR",
+        createdAt: "2026-01-01T00:00:00.000Z",
+      },
+      loading: false,
+      signup: vi.fn(),
+      login: vi.fn(),
+      logout: vi.fn(),
+    });
+
+    render(
+      <MemoryRouter initialEntries={["/"]}>
+        <Header />
+      </MemoryRouter>,
+    );
+
+    const adminLink = screen.getByRole("link", { name: "Admin" });
+    expect(adminLink).toHaveAttribute("href", "/admin");
   });
 
   it("renders no auth controls while loading", () => {

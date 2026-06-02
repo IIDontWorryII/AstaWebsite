@@ -13,6 +13,7 @@ import Fachschaften from "./pages/gremien/Fachschaften";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import Profile from "./pages/Profile";
+import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminEvents from "./pages/admin/AdminEvents";
 import NewEvent from "./pages/admin/NewEvent";
 import EditEvent from "./pages/admin/EditEvent";
@@ -40,6 +41,14 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/profile" element={<Profile />} />
+        <Route
+          path="/admin"
+          element={
+            <RequireEditor>
+              <AdminDashboard />
+            </RequireEditor>
+          }
+        />
         <Route
           path="/admin/events"
           element={

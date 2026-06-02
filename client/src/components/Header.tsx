@@ -222,12 +222,23 @@ function AuthWidget() {
 
   return (
     <div className="flex items-center gap-3">
+      {/* EDITORs get a quick link to the admin dashboard. Hidden for
+          regular USERs, who have nothing to manage. */}
+      {user.role === "EDITOR" && (
+        <Link
+          to="/admin"
+          className="text-sm font-medium hover:text-asta-red"
+          title="Verwaltung"
+        >
+          Admin
+        </Link>
+      )}
       <Link
         to="/profile"
         className="text-sm font-medium hover:text-asta-red"
         title="Mein Profil"
       >
-        {user.displayName}
+        Mein Profil
       </Link>
       {/* Tailwind v4 removed the default `cursor: pointer` on <button>,
           so we add it explicitly to match users' click-affordance expectations. */}
