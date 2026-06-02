@@ -19,7 +19,10 @@ import EditEvent from "./pages/admin/EditEvent";
 import AdminProtocols from "./pages/admin/AdminProtocols";
 import NewProtocol from "./pages/admin/NewProtocol";
 import EditProtocol from "./pages/admin/EditProtocol";
+import AdminGremien from "./pages/admin/gremien/AdminGremien";
+import AdminGremiumPage from "./pages/admin/gremien/AdminGremiumPage";
 import RequireEditor from "./auth/RequireEditor";
+import { Navigate } from "react-router-dom";
 
 function App() {
   return (
@@ -85,6 +88,18 @@ function App() {
             </RequireEditor>
           }
         />
+        <Route
+          path="/admin/gremien"
+          element={
+            <RequireEditor>
+              <AdminGremien />
+            </RequireEditor>
+          }
+        >
+          {/* Default to ASTA when no slug specified. */}
+          <Route index element={<Navigate to="/admin/gremien/asta" replace />} />
+          <Route path=":slug" element={<AdminGremiumPage />} />
+        </Route>
         <Route path="*" element={<NotFound />} />
       </Route>
     </Routes>
