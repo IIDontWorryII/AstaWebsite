@@ -293,6 +293,23 @@ describe("POST /api/admin/pages/:slug/sections", () => {
     expect(res.body.order).toBe(lastOrder + 1);
   });
 
+  it("creates a new MENU section on the BaRACke page", async () => {
+    const before = await request(app).get("/api/pages/baracke").expect(200);
+    const lastOrder =
+      before.body.sections[before.body.sections.length - 1].order;
+    // subtitle isn't shown for MENU but lets afterAll clean this row up.
+    const subtitle = uniqueSubtitle("menu");
+
+    const res = await editorAgent
+      .post("/api/admin/pages/baracke/sections")
+      .send({ kind: "MENU", subtitle, caption: "Seite 3" });
+
+    expect(res.status).toBe(201);
+    expect(res.body.kind).toBe("MENU");
+    expect(res.body.caption).toBe("Seite 3");
+    expect(res.body.order).toBe(lastOrder + 1);
+  });
+
   it("creates a new REFERAT appended to the end of the page", async () => {
     const before = await fetchAsta();
     const lastOrder = before.sections[before.sections.length - 1].order;

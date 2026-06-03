@@ -63,13 +63,19 @@ export interface ProtocolDTO {
  * - FREEFORM   — subtitle + body (Fachschaften's MIT/WiSo sections).
  * - MEMBER     — individual member portrait: photo + role + name + optional bio.
  *                Used by STUPA for Präsident / Vizepräsident.
+ * - MENU       — a single menu image (one page of the Getränkekarte).
+ *                Image-only + optional caption. Multi-instance (BaRACke).
+ * - GALLERY    — a single gallery photo. Image-only + optional caption.
+ *                Multi-instance, rendered as a grid (BaRACke).
  */
 export type PageSectionKind =
   | "INFO"
   | "REFERAT"
   | "MITGLIEDER"
   | "FREEFORM"
-  | "MEMBER";
+  | "MEMBER"
+  | "MENU"
+  | "GALLERY";
 
 /** A single section inside a Gremium page. */
 export interface PageSectionDTO {

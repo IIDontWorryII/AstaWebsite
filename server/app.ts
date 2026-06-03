@@ -538,7 +538,7 @@ app.put(
   },
 );
 
-// Add a new section to a page. Only REFERAT is supported via this route —
+// Add a new section to a page. Only multi-instance kinds are allowed here —
 // INFO/MITGLIEDER/FREEFORM are singletons (the schema doesn't enforce that
 // but the UI should and we reject other kinds here as a backstop).
 app.post(
@@ -556,12 +556,13 @@ app.post(
     }
     const data = parsed.data;
 
-    // REFERAT and MEMBER are the only multi-instance kinds. INFO,
+    // Multi-instance kinds that the UI lets editors add freely. INFO,
     // MITGLIEDER, FREEFORM are singletons and can't be created via this
     // route — they're seeded once and edited in place.
-    if (data.kind !== "REFERAT" && data.kind !== "MEMBER") {
+    const ADDABLE_KINDS = ["REFERAT", "MEMBER", "MENU", "GALLERY"] as const;
+    if (!ADDABLE_KINDS.includes(data.kind as (typeof ADDABLE_KINDS)[number])) {
       return res.status(400).json({
-        error: "Only REFERAT or MEMBER sections can be added via this route",
+        error: `Only ${ADDABLE_KINDS.join(", ")} sections can be added via this route`,
       });
     }
 

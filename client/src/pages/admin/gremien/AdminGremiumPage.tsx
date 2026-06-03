@@ -16,19 +16,19 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import type { PageDTO, PageSectionDTO } from "../../../../../shared/types";
-import {
-  addReferatSection,
-  addMemberSection,
-  deleteSection,
-  fetchPage,
-  moveSection,
-} from "@/lib/pages";
+import type {
+  PageDTO,
+  PageSectionDTO,
+  PageSectionKind,
+} from "../../../../../shared/types";
+import { addSection, deleteSection, fetchPage, moveSection } from "@/lib/pages";
 import InfoSection from "@/components/gremien/InfoSection";
 import ReferatCard from "@/components/gremien/ReferatCard";
 import MitgliederSection from "@/components/gremien/MitgliederSection";
 import FreeformSection from "@/components/gremien/FreeformSection";
 import MemberCard from "@/components/gremien/MemberCard";
+import MenuCard from "@/components/gremien/MenuCard";
+import GalleryCard from "@/components/gremien/GalleryCard";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -56,27 +56,65 @@ function renderSectionByKind(section: PageSectionDTO) {
       return <FreeformSection section={section} />;
     case "MEMBER":
       return <MemberCard section={section} />;
+    case "MENU":
+      return <MenuCard section={section} />;
+    case "GALLERY":
+      return <GalleryCard section={section} />;
   }
 }
 
+/** Kinds the editor can add/reorder/delete freely (multi-instance). */
+const REORDERABLE: ReadonlySet<PageSectionKind> = new Set([
+  "REFERAT",
+  "MEMBER",
+  "MENU",
+  "GALLERY",
+]);
+
+type AddConfig = {
+  label: string;
+  kind: PageSectionKind;
+  /** Noun shown in the confirm dialog ("X anlegen?"). */
+  placeholder: string;
+  /** Default field values for the freshly-created section. */
+  initial?: { subtitle?: string; body?: string; caption?: string };
+};
+
 /**
- * Config for the "add a new section" button per page slug. Pages without
- * an entry here don't get an add button (all their sections are singletons).
+ * "Add a new section" buttons per page slug. A page can offer several (e.g.
+ * BaRACke adds menu images AND gallery photos). Pages without an entry get
+ * no add buttons (all their sections are singletons).
  */
-const ADD_CONFIG: Record<
-  string,
-  { label: string; kind: "REFERAT" | "MEMBER"; placeholder: string }
-> = {
-  asta: {
-    label: "+ Neues Referat hinzufügen",
-    kind: "REFERAT",
-    placeholder: "Neues Referat",
-  },
-  stupa: {
-    label: "+ Neues Mitglied hinzufügen",
-    kind: "MEMBER",
-    placeholder: "Neues Mitglied",
-  },
+const ADD_CONFIG: Record<string, AddConfig[]> = {
+  asta: [
+    {
+      label: "+ Neues Referat hinzufügen",
+      kind: "REFERAT",
+      placeholder: "Neues Referat",
+      initial: { subtitle: "Neues Referat", body: "Beschreibung hier eintragen…" },
+    },
+  ],
+  stupa: [
+    {
+      label: "+ Neues Mitglied hinzufügen",
+      kind: "MEMBER",
+      placeholder: "Neues Mitglied",
+      initial: { subtitle: "Neues Mitglied", caption: "Name eintragen" },
+    },
+  ],
+  baracke: [
+    {
+      label: "+ Menübild hinzufügen",
+      kind: "MENU",
+      placeholder: "Menübild",
+      initial: { caption: "Getränkekarte" },
+    },
+    {
+      label: "+ Galeriebild hinzufügen",
+      kind: "GALLERY",
+      placeholder: "Galeriebild",
+    },
+  ],
 };
 
 export default function AdminGremiumPage() {
@@ -129,20 +167,9 @@ export default function AdminGremiumPage() {
     }
   }
 
-  async function handleAdd() {
-    const config = ADD_CONFIG[slug];
-    if (!config) return;
+  async function handleAdd(config: AddConfig) {
     try {
-      const created =
-        config.kind === "REFERAT"
-          ? await addReferatSection(slug, {
-              subtitle: config.placeholder,
-              body: "Beschreibung hier eintragen…",
-            })
-          : await addMemberSection(slug, {
-              subtitle: config.placeholder,
-              caption: "Name eintragen",
-            });
+      const created = await addSection(slug, config.kind, config.initial ?? {});
       // Reload to pick up the new section + open it for editing right away.
       const fresh = await fetchPage(slug);
       setPage(fresh);
@@ -167,41 +194,29 @@ export default function AdminGremiumPage() {
     );
   }
 
-  // Both REFERAT and MEMBER are reorderable kinds — find the first/last
-  // of each so we can decide whether to show up/down arrows.
-  const referateIds = page.sections
-    .filter((s) => s.kind === "REFERAT")
-    .map((s) => s.id);
-  const firstReferatId = referateIds[0];
-  const lastReferatId = referateIds[referateIds.length - 1];
-  const memberIds = page.sections
-    .filter((s) => s.kind === "MEMBER")
-    .map((s) => s.id);
-  const firstMemberId = memberIds[0];
-  const lastMemberId = memberIds[memberIds.length - 1];
+  // Reorderable kinds (REFERAT, MEMBER, MENU, GALLERY) can move up/down
+  // among their own kind. Compute the id list per kind so we know which
+  // section is first/last and hide the arrow at the edges.
+  const idsByKind = (kind: PageSectionKind) =>
+    page!.sections.filter((s) => s.kind === kind).map((s) => s.id);
 
   function canMoveUp(section: PageSectionDTO): boolean {
-    if (section.kind === "REFERAT") return section.id !== firstReferatId;
-    if (section.kind === "MEMBER") return section.id !== firstMemberId;
-    return false;
+    if (!REORDERABLE.has(section.kind)) return false;
+    return section.id !== idsByKind(section.kind)[0];
   }
   function canMoveDown(section: PageSectionDTO): boolean {
-    if (section.kind === "REFERAT") return section.id !== lastReferatId;
-    if (section.kind === "MEMBER") return section.id !== lastMemberId;
-    return false;
+    if (!REORDERABLE.has(section.kind)) return false;
+    const ids = idsByKind(section.kind);
+    return section.id !== ids[ids.length - 1];
   }
   function canDelete(section: PageSectionDTO): boolean {
-    // REFERAT/MEMBER are multi-instance and freely deletable. MITGLIEDER is
-    // a legacy STUPA text block we've replaced with member cards — allow
-    // deleting it so editors can remove the leftover.
-    return (
-      section.kind === "REFERAT" ||
-      section.kind === "MEMBER" ||
-      section.kind === "MITGLIEDER"
-    );
+    // Multi-instance kinds are freely deletable. MITGLIEDER is a legacy
+    // STUPA text block we've replaced with member cards — allow deleting it
+    // so editors can remove the leftover.
+    return REORDERABLE.has(section.kind) || section.kind === "MITGLIEDER";
   }
 
-  const addConfig = ADD_CONFIG[slug];
+  const addConfigs = ADD_CONFIG[slug] ?? [];
 
   return (
     <div className="max-w-5xl mx-auto px-6 py-8 space-y-8">
@@ -250,32 +265,34 @@ export default function AdminGremiumPage() {
         ))}
       </div>
 
-      {/* Pages with an entry in ADD_CONFIG get an "add new section" button.
-          ASTA → Referat, STUPA → Mitglied. Fachschaften has none. */}
-      {addConfig && (
-        <div className="border-t border-gray-200 pt-6">
-          <AlertDialog>
-            <AlertDialogTrigger
-              render={
-                <Button variant="outline" className="cursor-pointer">
-                  {addConfig.label}
-                </Button>
-              }
-            />
-            <AlertDialogContent>
-              <AlertDialogTitle>{addConfig.placeholder} anlegen?</AlertDialogTitle>
-              <AlertDialogDescription>
-                Ein neuer leerer Abschnitt wird am Ende der Liste angelegt. Du
-                kannst ihn danach direkt bearbeiten.
-              </AlertDialogDescription>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Abbrechen</AlertDialogCancel>
-                <AlertDialogAction onClick={handleAdd}>
-                  Anlegen
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+      {/* Pages with entries in ADD_CONFIG get "add new section" button(s).
+          ASTA → Referat, STUPA → Mitglied, BaRACke → Menü/Galerie. */}
+      {addConfigs.length > 0 && (
+        <div className="border-t border-gray-200 pt-6 flex flex-wrap gap-3">
+          {addConfigs.map((cfg) => (
+            <AlertDialog key={cfg.kind}>
+              <AlertDialogTrigger
+                render={
+                  <Button variant="outline" className="cursor-pointer">
+                    {cfg.label}
+                  </Button>
+                }
+              />
+              <AlertDialogContent>
+                <AlertDialogTitle>{cfg.placeholder} anlegen?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Ein neuer leerer Abschnitt wird am Ende der Liste angelegt. Du
+                  kannst ihn danach direkt bearbeiten.
+                </AlertDialogDescription>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+                  <AlertDialogAction onClick={() => handleAdd(cfg)}>
+                    Anlegen
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          ))}
         </div>
       )}
 

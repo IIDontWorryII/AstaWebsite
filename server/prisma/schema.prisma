@@ -77,12 +77,19 @@ model PageSection {
 //                + name (caption) + optional bio (body). Used by STUPA
 //                for Präsident / Vizepräsident; can be reused anywhere
 //                an individual person needs to be showcased.
+//   MENU       — a single menu image (e.g. one page of the Getränkekarte).
+//                Image-only (+ optional caption). Multi-instance: BaRACke
+//                shows two side by side.
+//   GALLERY    — a single gallery photo (image-only + optional caption).
+//                Multi-instance, rendered as a photo grid. Used by BaRACke.
 enum PageSectionKind {
   INFO
   REFERAT
   MITGLIEDER
   FREEFORM
   MEMBER
+  MENU
+  GALLERY
 }
 
 model Protocol {

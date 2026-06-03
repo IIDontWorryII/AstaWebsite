@@ -13,7 +13,14 @@
 import type { PrismaClient } from "@prisma/client";
 
 type SeedSection = {
-  kind: "INFO" | "REFERAT" | "MITGLIEDER" | "FREEFORM" | "MEMBER";
+  kind:
+    | "INFO"
+    | "REFERAT"
+    | "MITGLIEDER"
+    | "FREEFORM"
+    | "MEMBER"
+    | "MENU"
+    | "GALLERY";
   subtitle?: string;
   body?: string;
   imageUrl?: string;
@@ -106,6 +113,12 @@ const FACHSCHAFTEN_WISO_BODY =
   "Prüfungsordnungen oder beim Bafög-Antrag. Damit Ihr auch nichts verpasst, haltet die Augen nach " +
   "unseren Plakaten offen oder schaut auf unserer Facebook Seite vorbei! Fachschaft(srat) WiSo " +
   "RheinAhrCampus";
+
+const BARACKE_INFO_BODY =
+  "Die BaRACke ist die studentische Kneipe des RheinAhrCampus – betrieben von Studierenden für " +
+  "Studierende. Hier trefft ihr euch nach den Vorlesungen auf ein kühles Getränk, feiert Partys " +
+  "und lernt neue Leute kennen. Die BaRACke wird ehrenamtlich vom AStA betrieben; die Einnahmen " +
+  "fließen zurück in studentische Veranstaltungen. Schaut vorbei und werdet Teil des Campuslebens!";
 
 const PAGES: SeedPage[] = [
   {
@@ -265,6 +278,26 @@ const PAGES: SeedPage[] = [
       { kind: "INFO", body: FACHSCHAFTEN_INFO_BODY },
       { kind: "FREEFORM", subtitle: "MIT", body: FACHSCHAFTEN_MIT_BODY },
       { kind: "FREEFORM", subtitle: "WiSo", body: FACHSCHAFTEN_WISO_BODY },
+    ],
+  },
+  {
+    slug: "baracke",
+    title: "BaRACke",
+    sections: [
+      // 1) Description (title via the "Info" heading + text + image).
+      { kind: "INFO", body: BARACKE_INFO_BODY, imageUrl: "/Baracke-photo1.jpg" },
+      // 2) Opening hours — a simple editable text block (reuses FREEFORM).
+      {
+        kind: "FREEFORM",
+        subtitle: "Öffnungszeiten",
+        body: "Während der Vorlesungszeit donnerstags ab 19:00 Uhr.",
+      },
+      // 3) Getränkekarte — two menu images side by side. Editors upload the
+      //    real menu pages via admin; seeded empty so nothing fake shows.
+      { kind: "MENU", caption: "Getränkekarte – Seite 1" },
+      { kind: "MENU", caption: "Getränkekarte – Seite 2" },
+      // 4) Gallery — one seeded interior shot; editors add more.
+      { kind: "GALLERY", imageUrl: "/Baracke-photo1.jpg", caption: "Innenraum" },
     ],
   },
 ];

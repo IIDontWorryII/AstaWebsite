@@ -63,22 +63,34 @@ export default function Footer() {
         {/* Col 3: socials */}
         <div>
           <h3 className="text-lg font-bold mb-4">Folge uns</h3>
-          <div className="flex gap-4 text-2xl">
+          <div className="flex gap-4">
             <a
               href="#"
               target="_blank"
               rel="noopener noreferrer"
               aria-label="Instagram"
+              className="bg-white rounded-full p-2 hover:opacity-80 transition-opacity"
             >
-              📷
+              <img
+                src="/Instagram_logo_2016.svg"
+                alt=""
+                aria-hidden="true"
+                className="h-6 w-6"
+              />
             </a>
             <a
               href="#"
               target="_blank"
               rel="noopener noreferrer"
               aria-label="TikTok"
+              className="bg-white rounded-full p-2 hover:opacity-80 transition-opacity"
             >
-              🎵
+              <img
+                src="/tiktok-icon-2.svg"
+                alt=""
+                aria-hidden="true"
+                className="h-6 w-6"
+              />
             </a>
           </div>
         </div>

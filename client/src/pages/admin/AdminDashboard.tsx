@@ -25,8 +25,8 @@ const CARDS = [
   },
   {
     to: "/admin/gremien",
-    title: "Gremien-Seiten",
-    description: "AStA-, StuPa- und Fachschaften-Seiten bearbeiten.",
+    title: "Seiteninhalte",
+    description: "AStA-, StuPa-, Fachschaften- und BaRACke-Seiten bearbeiten.",
     image: "/campus-photo.jpg",
   },
 ];

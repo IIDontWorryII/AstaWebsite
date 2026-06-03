@@ -130,19 +130,29 @@ export default function Header() {
             href="#"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-2xl hover:text-asta-red"
+            className="hover:opacity-70 transition-opacity"
             aria-label="Instagram"
           >
-            📷
+            <img
+              src="/Instagram_logo_2016.svg"
+              alt=""
+              aria-hidden="true"
+              className="h-6 w-6"
+            />
           </a>
           <a
             href="#"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-2xl hover:text-asta-red"
+            className="hover:opacity-70 transition-opacity"
             aria-label="TikTok"
           >
-            🎵
+            <img
+              src="/tiktok-icon-2.svg"
+              alt=""
+              aria-hidden="true"
+              className="h-6 w-6"
+            />
           </a>
         </div>
       </div>

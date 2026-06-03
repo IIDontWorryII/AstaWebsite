@@ -8,6 +8,8 @@
 //   MITGLIEDER → image, subtitle (heading), body
 //   FREEFORM   → image, subtitle, body
 //   MEMBER     → image, subtitle (role), caption (name)
+//   MENU       → image, caption
+//   GALLERY    → image, caption
 //
 // Save calls updateSection() with the edited fields. New image (if picked)
 // rides along; if no new file, the existing image stays.
@@ -39,7 +41,9 @@ function hasImage(kind: string): boolean {
     kind === "REFERAT" ||
     kind === "MITGLIEDER" ||
     kind === "MEMBER" ||
-    kind === "FREEFORM"
+    kind === "FREEFORM" ||
+    kind === "MENU" ||
+    kind === "GALLERY"
   );
 }
 function hasSubtitle(kind: string): boolean {
@@ -51,12 +55,23 @@ function hasSubtitle(kind: string): boolean {
   );
 }
 function hasCaption(kind: string): boolean {
-  // REFERAT uses caption for holder name; MEMBER uses it for the person's name.
-  return kind === "REFERAT" || kind === "MEMBER";
+  // REFERAT → holder name, MEMBER → person's name, MENU/GALLERY → caption.
+  return (
+    kind === "REFERAT" ||
+    kind === "MEMBER" ||
+    kind === "MENU" ||
+    kind === "GALLERY"
+  );
 }
 function hasBody(kind: string): boolean {
-  // MEMBER cards only show name + role — no free-text body.
-  return kind !== "MEMBER";
+  // Only text-bearing kinds get a body field. MEMBER/MENU/GALLERY are
+  // image-first and show no free-text body.
+  return (
+    kind === "INFO" ||
+    kind === "REFERAT" ||
+    kind === "MITGLIEDER" ||
+    kind === "FREEFORM"
+  );
 }
 function hasEmail(kind: string): boolean {
   return kind === "REFERAT";
@@ -68,6 +83,8 @@ const KIND_LABEL: Record<string, string> = {
   MITGLIEDER: "Mitglieder",
   FREEFORM: "Abschnitt",
   MEMBER: "Mitglied",
+  MENU: "Menübild",
+  GALLERY: "Galeriebild",
 };
 
 // The "subtitle" field means different things per kind. The drawer's
@@ -89,6 +106,9 @@ function captionLabel(kind: string): string {
   switch (kind) {
     case "MEMBER":
       return "Name";
+    case "MENU":
+    case "GALLERY":
+      return "Bildunterschrift";
     case "REFERAT":
     default:
       return "Inhaber:in";

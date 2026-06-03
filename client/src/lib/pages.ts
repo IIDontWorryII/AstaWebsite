@@ -4,7 +4,11 @@
 // baracke / sport). The admin endpoints live alongside so admin pages can
 // share the same module.
 
-import type { PageDTO, PageSectionDTO } from "../../../shared/types";
+import type {
+  PageDTO,
+  PageSectionDTO,
+  PageSectionKind,
+} from "../../../shared/types";
 import { apiFetch, jsonOrThrow } from "./api";
 import { compressImage } from "./image";
 
@@ -76,6 +80,31 @@ export async function addMemberSection(
     {
       method: "POST",
       body: JSON.stringify({ kind: "MEMBER", ...initial }),
+    },
+  );
+  return jsonOrThrow<PageSectionDTO>(res, "Failed to add section");
+}
+
+/**
+ * Generic "add section" — POSTs the given kind. The server only accepts
+ * multi-instance kinds (REFERAT, MEMBER, MENU, GALLERY). Use this for the
+ * kinds without a dedicated helper above.
+ */
+export async function addSection(
+  pageSlug: string,
+  kind: PageSectionKind,
+  initial: {
+    subtitle?: string;
+    body?: string;
+    caption?: string;
+    email?: string;
+  } = {},
+): Promise<PageSectionDTO> {
+  const res = await apiFetch(
+    `/api/admin/pages/${encodeURIComponent(pageSlug)}/sections`,
+    {
+      method: "POST",
+      body: JSON.stringify({ kind, ...initial }),
     },
   );
   return jsonOrThrow<PageSectionDTO>(res, "Failed to add section");

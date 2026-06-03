@@ -14,6 +14,7 @@ const NAV_ITEMS = [
   { slug: "asta", label: "AStA" },
   { slug: "stupa", label: "StuPa" },
   { slug: "fachschaften", label: "Fachschaften" },
+  { slug: "baracke", label: "BaRACke" },
 ];
 
 export default function AdminGremien() {
