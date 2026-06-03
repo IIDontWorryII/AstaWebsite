@@ -20,6 +20,7 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import type { EventDTO } from "../../../../shared/types";
+import { EVENT_CATEGORIES } from "../../../../shared/types";
 import {
   createEvent,
   updateEvent,
@@ -68,6 +69,7 @@ export default function EventForm({ event }: EventFormProps) {
     event ? isoToDatetimeLocalValue(event.startsAt) : "",
   );
   const [price, setPrice] = useState(event?.price ?? "");
+  const [category, setCategory] = useState(event?.category ?? "");
 
   // ─── File state ───
   // `file` is the newly-selected File (or null if none picked yet).
@@ -121,6 +123,8 @@ export default function EventForm({ event }: EventFormProps) {
         startsAt: datetimeLocalValueToISO(startsAt),
         // Empty price string → undefined so we don't send "" to the server.
         price: price.trim() === "" ? undefined : price,
+        // "" is allowed — the server reads it as "no category".
+        category,
       };
 
       if (isEdit) {
@@ -225,6 +229,30 @@ export default function EventForm({ event }: EventFormProps) {
             onChange={(e) => setPrice(e.target.value)}
             className="w-full border border-gray-300 rounded px-3 py-2"
           />
+        </div>
+
+        <div>
+          <label htmlFor="category" className="block text-sm font-semibold mb-1">
+            Kategorie / Referat{" "}
+            <span className="text-gray-500 font-normal">(optional)</span>
+          </label>
+          <select
+            id="category"
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+            className="w-full border border-gray-300 rounded px-3 py-2 bg-white"
+          >
+            <option value="">— keine —</option>
+            {EVENT_CATEGORIES.map((c) => (
+              <option key={c.value} value={c.value}>
+                {c.label}
+              </option>
+            ))}
+          </select>
+          <p className="text-xs text-gray-500 mt-1">
+            Bestimmt, auf welcher Referat-Seite das Event in „Bevorstehende
+            Events“ erscheint.
+          </p>
         </div>
 
         <div>

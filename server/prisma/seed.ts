@@ -10,6 +10,7 @@ const events = [
     title: "Sound of summer",
     description: "Campus Party",
     place: "Rheinahrcampus",
+    category: "EVENT",
     startsAt: new Date("2026-05-30T18:00:00"),
   },
   {
@@ -17,6 +18,7 @@ const events = [
     title: "House night",
     description: "Baracke party with house music",
     place: "Baracke",
+    category: "BARACKE",
     startsAt: new Date("2026-05-07T20:00:00"),
   },
   {
@@ -24,7 +26,16 @@ const events = [
     title: "Night Beach",
     description: "Beachvolleyball Turnier nach dem Sonnenuntergang ",
     place: "MBC",
+    category: "SPORT",
     startsAt: new Date("2026-05-06T20:00:00"),
+  },
+  {
+    id: "event-rac-sportturnier",
+    title: "RAC Sportturnier",
+    description: "Hochschulweites Turnier in mehreren Sportarten.",
+    place: "Sporthalle Remagen",
+    category: "SPORT",
+    startsAt: new Date("2026-09-15T16:00:00"),
   },
 ];
 

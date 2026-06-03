@@ -36,6 +36,11 @@ model Event {
   imageUrl    String?
   price       String?
   place       String
+  // Which group/referat the event belongs to (BARACKE, EVENT, SPORT,
+  // FS_WISO, FS_MIT). Drives the per-referat "upcoming events" sections.
+  // Free string validated app-side (see shared/types EVENT_CATEGORIES) so
+  // new referate don't require a migration. Nullable for legacy rows.
+  category    String?
   startsAt    DateTime
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt()

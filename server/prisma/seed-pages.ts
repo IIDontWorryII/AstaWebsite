@@ -120,6 +120,11 @@ const BARACKE_INFO_BODY =
   "und lernt neue Leute kennen. Die BaRACke wird ehrenamtlich vom AStA betrieben; die Einnahmen " +
   "fließen zurück in studentische Veranstaltungen. Schaut vorbei und werdet Teil des Campuslebens!";
 
+const SPORT_INFO_BODY =
+  "Der Hochschulsport am RheinAhrCampus bietet euch Ausgleich zum Studienalltag: von Fußball und " +
+  "Volleyball über Fitnesskurse bis zu Turnieren. Alle Studierenden sind willkommen – egal ob " +
+  "Anfänger oder Profi. Das aktuelle Sportprogramm und kommende Sport-Events findet ihr hier.";
+
 const PAGES: SeedPage[] = [
   {
     slug: "asta",
@@ -298,6 +303,20 @@ const PAGES: SeedPage[] = [
       { kind: "MENU", caption: "Getränkekarte – Seite 2" },
       // 4) Gallery — one seeded interior shot; editors add more.
       { kind: "GALLERY", imageUrl: "/Baracke-photo1.jpg", caption: "Innenraum" },
+    ],
+  },
+  {
+    slug: "sport",
+    title: "Sport",
+    sections: [
+      // 1) Description (title via the "Info" heading + text + image).
+      { kind: "INFO", body: SPORT_INFO_BODY },
+      // 2) Sportprogramm — schedule images side by side (MENU kind). Editors
+      //    upload the real schedule via admin; seeded empty.
+      { kind: "MENU", caption: "Sportprogramm – Seite 1" },
+      { kind: "MENU", caption: "Sportprogramm – Seite 2" },
+      // 3) Gallery — editors add photos via admin.
+      { kind: "GALLERY", caption: "Foto" },
     ],
   },
 ];

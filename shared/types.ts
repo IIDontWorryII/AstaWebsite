@@ -34,6 +34,21 @@ export interface HealthResponse {
   version: string;
 }
 
+/**
+ * The groups/referate an event can belong to. `value` is stored in the DB
+ * and used for filtering; `label` is shown in the UI. Add new referate here
+ * — no DB migration needed (the column is a free string).
+ */
+export const EVENT_CATEGORIES = [
+  { value: "BARACKE", label: "BaRACke" },
+  { value: "EVENT", label: "Event" },
+  { value: "SPORT", label: "Sport" },
+  { value: "FS_WISO", label: "FS WiSo" },
+  { value: "FS_MIT", label: "FS MIT" },
+] as const;
+
+export type EventCategory = (typeof EVENT_CATEGORIES)[number]["value"];
+
 export interface EventDTO {
   id: string;
   title: string;
@@ -41,6 +56,8 @@ export interface EventDTO {
   imageUrl: string | null;
   price: string | null;
   place: string;
+  /** One of EVENT_CATEGORIES' values, or null for untagged events. */
+  category: string | null;
   startsAt: string;
   createdAt: string;
   updatedAt: string;

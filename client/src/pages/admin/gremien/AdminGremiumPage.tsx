@@ -115,6 +115,19 @@ const ADD_CONFIG: Record<string, AddConfig[]> = {
       placeholder: "Galeriebild",
     },
   ],
+  sport: [
+    {
+      label: "+ Programmbild hinzufügen",
+      kind: "MENU",
+      placeholder: "Programmbild",
+      initial: { caption: "Sportprogramm" },
+    },
+    {
+      label: "+ Galeriebild hinzufügen",
+      kind: "GALLERY",
+      placeholder: "Galeriebild",
+    },
+  ],
 };
 
 export default function AdminGremiumPage() {

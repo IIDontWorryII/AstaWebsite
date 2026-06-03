@@ -108,6 +108,7 @@ app.post(
         place: data.place,
         startsAt: new Date(data.startsAt),
         price: data.price ?? null,
+        category: data.category ? data.category : null,
         imageUrl,
       },
     });
@@ -153,6 +154,7 @@ app.put(
       place?: string;
       startsAt?: Date;
       price?: string | null;
+      category?: string | null;
       imageUrl?: string | null;
     } = {};
     if (data.title !== undefined) updatePayload.title = data.title;
@@ -160,6 +162,9 @@ app.put(
     if (data.place !== undefined) updatePayload.place = data.place;
     if (data.startsAt !== undefined) updatePayload.startsAt = new Date(data.startsAt);
     if (data.price !== undefined) updatePayload.price = data.price;
+    // Empty string clears the category (set null); a real value sets it.
+    if (data.category !== undefined)
+      updatePayload.category = data.category ? data.category : null;
     if (req.file) {
       // Upload new image to R2, then delete the previous one from R2.
       // Order matters: upload first so we don't lose both if upload fails.

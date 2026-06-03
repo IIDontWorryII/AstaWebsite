@@ -129,6 +129,28 @@ describe("POST /api/events", () => {
     expect(mockUpload).not.toHaveBeenCalled();
   });
 
+  it("stores a valid category and rejects an invalid one", async () => {
+    const title = uniqueTitle("create-category");
+    const ok = await editorAgent
+      .post("/api/events")
+      .field("title", title)
+      .field("description", "Description")
+      .field("place", "Sporthalle")
+      .field("startsAt", "2026-12-01T18:00:00.000Z")
+      .field("category", "SPORT");
+    expect(ok.status).toBe(201);
+    expect(ok.body.category).toBe("SPORT");
+
+    const bad = await editorAgent
+      .post("/api/events")
+      .field("title", uniqueTitle("bad-category"))
+      .field("description", "Description")
+      .field("place", "Campus")
+      .field("startsAt", "2026-12-01T18:00:00.000Z")
+      .field("category", "NOT_A_REAL_CATEGORY");
+    expect(bad.status).toBe(400);
+  });
+
   it("creates an event with an image and uploads it to storage", async () => {
     const title = uniqueTitle("create-with-img");
     const res = await editorAgent

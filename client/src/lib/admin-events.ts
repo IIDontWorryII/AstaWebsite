@@ -22,6 +22,8 @@ export interface EventFormInput {
   /** ISO 8601 string. UI uses datetime-local; convert with new Date(value).toISOString(). */
   startsAt: string;
   price?: string;
+  /** One of EVENT_CATEGORIES' values, or "" for none. */
+  category?: string;
 }
 
 /**
