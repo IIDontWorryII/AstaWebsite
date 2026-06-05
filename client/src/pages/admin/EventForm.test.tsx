@@ -57,6 +57,7 @@ const existingEvent: EventDTO = {
   imageUrl: "/uploads/events/existing.png",
   price: "5€",
   place: "BaRACke",
+  category: null,
   startsAt: "2026-07-15T18:00:00.000Z",
   createdAt: "2026-05-01T00:00:00.000Z",
   updatedAt: "2026-05-01T00:00:00.000Z",
