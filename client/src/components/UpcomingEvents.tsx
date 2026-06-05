@@ -10,6 +10,7 @@
 import { useEffect, useState } from "react";
 import type { EventDTO } from "../../../shared/types";
 import { fetchEvents } from "@/lib/api";
+import { formatCountdown, formatEventDate, selectUpcoming } from "@/lib/events";
 
 interface UpcomingEventsProps {
   /** Filter to this category (EVENT_CATEGORIES value). Omit = all events. */
@@ -18,18 +19,6 @@ interface UpcomingEventsProps {
   limit?: number;
   /** Section heading. Default "Bevorstehende Events". */
   title?: string;
-}
-
-/** Human countdown like "noch 12 Tg 4 Std" / "noch 3 Std 20 Min". */
-function formatCountdown(ms: number): string {
-  if (ms <= 0) return "Läuft";
-  const totalMinutes = Math.floor(ms / 60000);
-  const days = Math.floor(totalMinutes / (60 * 24));
-  const hours = Math.floor((totalMinutes % (60 * 24)) / 60);
-  const minutes = totalMinutes % 60;
-  if (days > 0) return `noch ${days} Tg ${hours} Std`;
-  if (hours > 0) return `noch ${hours} Std ${minutes} Min`;
-  return `noch ${minutes} Min`;
 }
 
 export default function UpcomingEvents({
@@ -52,14 +41,7 @@ export default function UpcomingEvents({
     return () => clearInterval(id);
   }, []);
 
-  const upcoming = events
-    .filter((e) => (category ? e.category === category : true))
-    .filter((e) => new Date(e.startsAt).getTime() >= now)
-    .sort(
-      (a, b) =>
-        new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime(),
-    )
-    .slice(0, limit);
+  const upcoming = selectUpcoming(events, { category, limit, now });
 
   return (
     <section id="events" className="scroll-mt-20">
@@ -86,14 +68,7 @@ export default function UpcomingEvents({
                 <div className="p-4 flex flex-col gap-1">
                   <h3 className="font-semibold">{e.title}</h3>
                   <p className="text-sm text-gray-600">
-                    {new Date(e.startsAt).toLocaleDateString("de-DE", {
-                      day: "2-digit",
-                      month: "2-digit",
-                      year: "numeric",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}{" "}
-                    Uhr
+                    {formatEventDate(e.startsAt)}
                   </p>
                   <span className="mt-2 inline-block self-start rounded-full bg-asta-red/10 text-asta-red text-xs font-semibold px-3 py-1">
                     {formatCountdown(ms)}

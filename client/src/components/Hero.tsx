@@ -1,5 +1,6 @@
 // client/src/components/Hero.tsx
 
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 
 export default function Hero() {
@@ -12,13 +13,17 @@ export default function Hero() {
         </h1>
 
         <div className="mt-8 flex flex-wrap gap-4">
-          <Button size="brand" render={<a href="#" />} nativeButton={false}>
+          <Button
+            size="brand"
+            render={<Link to="/gremien/asta" />}
+            nativeButton={false}
+          >
             Über den AStA
           </Button>
           <Button
             variant="brandOutline"
             size="brand"
-            render={<a href="#" />}
+            render={<Link to="/kontakt" />}
             nativeButton={false}
           >
             Mitmachen
