@@ -1,5 +1,8 @@
 // client/src/components/Footer.tsx
 
+import { Link } from "react-router-dom";
+import { SOCIAL_LINKS } from "@/lib/socials";
+
 export default function Footer() {
   return (
     <footer className="relative bg-asta-red text-white overflow-hidden">
@@ -48,14 +51,25 @@ export default function Footer() {
           <h3 className="text-lg font-bold mb-4">Schnelllinks</h3>
           <ul className="space-y-2 text-sm">
             <li>
-              <a href="#" className="hover:underline">
+              <Link to="/gremien/asta" className="hover:underline">
                 Über uns
-              </a>
+              </Link>
             </li>
             <li>
-              <a href="#" className="hover:underline">
+              <Link to="/gremien/asta#referate" className="hover:underline">
                 Referate
-              </a>
+              </Link>
+            </li>
+            <li>
+              <Link to="/eventkalender" className="hover:underline">
+                Eventkalender
+              </Link>
+            </li>
+            {/* Kontakt moved here from the header (AW-46). */}
+            <li>
+              <Link to="/kontakt" className="hover:underline">
+                Kontakt
+              </Link>
             </li>
           </ul>
         </div>
@@ -65,7 +79,7 @@ export default function Footer() {
           <h3 className="text-lg font-bold mb-4">Folge uns</h3>
           <div className="flex gap-4">
             <a
-              href="#"
+              href={SOCIAL_LINKS.instagram}
               target="_blank"
               rel="noopener noreferrer"
               aria-label="Instagram"
@@ -79,7 +93,7 @@ export default function Footer() {
               />
             </a>
             <a
-              href="#"
+              href={SOCIAL_LINKS.tiktok}
               target="_blank"
               rel="noopener noreferrer"
               aria-label="TikTok"

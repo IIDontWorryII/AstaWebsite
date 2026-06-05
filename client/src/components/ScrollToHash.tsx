@@ -21,15 +21,25 @@ export default function ScrollToHash() {
   useEffect(() => {
     if (hash) {
       const id = hash.slice(1);
-      // Defer to next paint — ensures the target section is in the DOM and
-      // layout has settled before we scroll to it.
-      requestAnimationFrame(() => {
+      // The target may not exist yet: Gremien pages fetch their content
+      // async, so when arriving from ANOTHER page (e.g. Home → /gremien/asta
+      // #referate) the section mounts a beat later. Poll briefly until it
+      // appears, then scroll. (Same-page hash clicks hit on the first try.)
+      let attempts = 0;
+      let timer: ReturnType<typeof setTimeout>;
+      const tryScroll = () => {
         const el = document.getElementById(id);
         if (el) {
           el.scrollIntoView({ behavior: "smooth", block: "start" });
+          return;
         }
-      });
-      return;
+        // ~2s budget (20 × 100ms) covers a slow content fetch, then gives up.
+        if (++attempts < 20) {
+          timer = setTimeout(tryScroll, 100);
+        }
+      };
+      tryScroll();
+      return () => clearTimeout(timer);
     }
 
     // No hash — fresh navigation, start at top of page.

@@ -77,7 +77,7 @@ describe("Header", () => {
     expect(anchor).toHaveAttribute("href", "/signup");
   });
 
-  it("shows the profile link and a Logout button when logged in", () => {
+  it("shows the profile avatar link (no header Logout) when logged in", () => {
     mockUseAuth.mockReturnValue({
       user: {
         id: "user-1",
@@ -98,7 +98,7 @@ describe("Header", () => {
       </MemoryRouter>,
     );
 
-    // Profile is a Link to /profile labelled "Mein Profil".
+    // Profile is now an avatar link to /profile labelled "Mein Profil".
     const profileLink = screen.getByRole("link", { name: "Mein Profil" });
     expect(profileLink).toBeInTheDocument();
     expect(profileLink).toHaveAttribute("href", "/profile");
@@ -106,12 +106,25 @@ describe("Header", () => {
     // A plain USER does not see the EDITOR-only Admin link.
     expect(screen.queryByRole("link", { name: "Admin" })).not.toBeInTheDocument();
 
-    // Logout button present.
-    expect(screen.getByRole("button", { name: "Logout" })).toBeInTheDocument();
+    // Logout moved to the profile page — it is NOT in the header anymore.
+    expect(
+      screen.queryByRole("button", { name: "Logout" }),
+    ).not.toBeInTheDocument();
 
     // Logged-out controls should be gone.
     expect(screen.queryByRole("link", { name: "Login" })).not.toBeInTheDocument();
     expect(screen.queryByText("Registrieren")).not.toBeInTheDocument();
+  });
+
+  it("does not show Kontakt in the header nav (it moved to the footer)", () => {
+    render(
+      <MemoryRouter initialEntries={["/"]}>
+        <Header />
+      </MemoryRouter>,
+    );
+    expect(
+      screen.queryByRole("link", { name: "Kontakt" }),
+    ).not.toBeInTheDocument();
   });
 
   it("shows an Admin link for EDITOR users", () => {

@@ -3,15 +3,30 @@
 // User profile page. Gated: redirects to /login if not authenticated.
 // Currently shows account info + a placeholder for future ticket purchases.
 
-import { Navigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
 import { useAuth } from "@/auth/AuthContext";
+import { Button } from "@/components/ui/button";
 
 export default function Profile() {
   // Pull the current user from context. `loading` is true during the initial
   // /api/me check on app load; without it, we'd briefly redirect logged-in
   // users to /login on every page refresh (because user is null until /me
   // resolves).
-  const { user, loading } = useAuth();
+  const { user, loading, logout } = useAuth();
+  const navigate = useNavigate();
+
+  // Logout lives here now (moved off the header in AW-46). Navigate home
+  // *before* awaiting logout(): once logout resolves user becomes null, and
+  // if we were still on /profile its guard would redirect to /login and win
+  // the race. Leaving first lets the user land on Home as intended.
+  async function handleLogout() {
+    navigate("/", { replace: true });
+    try {
+      await logout();
+    } catch (err) {
+      console.error("Logout failed:", err);
+    }
+  }
 
   // While the session check is pending, show a loading state. The Layout
   // wrapper provides the header/footer; we just fill the main area.
@@ -69,6 +84,17 @@ export default function Profile() {
           Hier erscheinen später deine gekauften Event-Tickets.
         </p>
       </section>
+
+      {/* Logout lives at the bottom of the profile (moved off the header). */}
+      <div className="mt-12 border-t pt-8">
+        <Button
+          onClick={handleLogout}
+          variant="brandOutline"
+          className="cursor-pointer"
+        >
+          Logout
+        </Button>
+      </div>
     </section>
   );
 }

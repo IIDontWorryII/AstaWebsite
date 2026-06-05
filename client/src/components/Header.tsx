@@ -1,6 +1,6 @@
 // client/src/components/Header.tsx
 
-import { Link, NavLink, useNavigate } from "react-router-dom";
+import { Link, NavLink } from "react-router-dom";
 import {
   NavigationMenu,
   NavigationMenuContent,
@@ -11,15 +11,16 @@ import {
 } from "@/components/ui/navigation-menu";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/auth/AuthContext";
+import { SOCIAL_LINKS } from "@/lib/socials";
 
 const navLinkClass = ({ isActive }: { isActive: boolean }) =>
   `font-medium pb-1 ${isActive ? "text-asta-red border-b-2 border-asta-red" : "hover:text-asta-red"}`;
 
+// Kontakt now lives in the footer (AW-46), so it's no longer in the nav.
 const navItems = [
   { to: "/eventkalender", label: "Eventkalender" },
   { to: "/baracke", label: "BaRACke" },
   { to: "/sport", label: "Sport" },
-  { to: "/kontakt", label: "Kontakt" },
 ];
 
 const gremienSections = [
@@ -53,16 +54,15 @@ const gremienSections = [
 ];
 
 export default function Header() {
+  // EDITORs get an "Admin" entry in the central nav (right of Sport).
+  const { user } = useAuth();
+
   return (
     <header className="sticky top-0 bg-white border-b border-gray-200 z-50">
       <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
         {/*Left: logo */}
         <Link to="/">
-          <img
-            src="/asta-logo.png"
-            alt="AStA Remagen"
-            className="h-16 w-auto"
-          />
+          <img src="/asta-logo.png" alt="AStA Remagen" className="h-16 w-auto" />
         </Link>
 
         {/*Center:  primary nav */}
@@ -120,14 +120,18 @@ export default function Header() {
               {item.label}
             </NavLink>
           ))}
+          {/* Admin sits at the end of the nav, EDITOR-only. */}
+          {user?.role === "EDITOR" && (
+            <NavLink to="/admin" className={navLinkClass}>
+              Admin
+            </NavLink>
+          )}
         </nav>
 
-        {/* Right: auth widget + social icons */}
+        {/* Right: social icons, then the auth widget (profile / login). */}
         <div className="flex items-center gap-4">
-          <AuthWidget />
-
           <a
-            href="#"
+            href={SOCIAL_LINKS.instagram}
             target="_blank"
             rel="noopener noreferrer"
             className="hover:opacity-70 transition-opacity"
@@ -141,7 +145,7 @@ export default function Header() {
             />
           </a>
           <a
-            href="#"
+            href={SOCIAL_LINKS.tiktok}
             target="_blank"
             rel="noopener noreferrer"
             className="hover:opacity-70 transition-opacity"
@@ -154,6 +158,8 @@ export default function Header() {
               className="h-6 w-6"
             />
           </a>
+
+          <AuthWidget />
         </div>
       </div>
     </header>
@@ -166,32 +172,22 @@ export default function Header() {
  *   - loading: nothing (avoids a "Login" flash for users who actually have
  *              a valid session — the /api/me check is in flight)
  *   - logged out: Login link + Registrieren button
- *   - logged in:  Profil link (with display name) + Logout button
- *
- * Kept as a sibling component (not inlined) so its state logic doesn't
- * clutter the layout JSX above.
+ *   - logged in:  an avatar circle linking to the profile (Logout now lives
+ *                 on the profile page itself — AW-46)
  */
 function AuthWidget() {
-  const { user, loading, logout } = useAuth();
-  const navigate = useNavigate();
+  const { user, loading } = useAuth();
 
-  // During the initial session check, render nothing. The widget is small
-  // and slots in beside other controls — empty is less disruptive than a
-  // brief "Login / Registrieren" flash that then swaps to the user menu.
+  // During the initial session check, render nothing (avoids a Login flash).
   if (loading) {
     return null;
   }
 
-  // Logged out: a low-emphasis text link for Login and a primary Button
-  // for Registrieren. The visual hierarchy nudges new users toward signup
-  // while letting returning users find Login easily.
+  // Logged out: Login link + Registrieren button.
   if (!user) {
     return (
       <div className="flex items-center gap-3">
-        <Link
-          to="/login"
-          className="text-sm font-medium hover:text-asta-red"
-        >
+        <Link to="/login" className="text-sm font-medium hover:text-asta-red">
           Login
         </Link>
         {/* Base UI's Button uses `render={<Link/>}` (not `asChild` like Radix)
@@ -210,56 +206,20 @@ function AuthWidget() {
     );
   }
 
-  // Logged in: name links to profile, button logs out and returns home.
-  //
-  // IMPORTANT: navigate("/") happens *before* awaiting logout(). Reason:
-  // when logout() resolves, AuthContext sets user=null. If we're still on
-  // /profile at that moment, Profile's guard (`if (!user) <Navigate
-  // to="/login"/>`) fires and the imperative navigate("/") below loses
-  // the race. By navigating first, /profile unmounts before its guard
-  // can re-render, and the user lands on Home as intended.
-  async function handleLogout() {
-    navigate("/", { replace: true });
-    try {
-      await logout();
-    } catch (err) {
-      // Logout failures are rare (the server endpoint is essentially
-      // a "always succeeds" no-op). Log for debugging; the user's local
-      // state is already cleared by AuthContext.logout() on success.
-      console.error("Logout failed:", err);
-    }
-  }
-
+  // Logged in: a profile icon (a touch larger than the social icons so it
+  // reads as a distinct control) linking to the profile page.
   return (
-    <div className="flex items-center gap-3">
-      {/* EDITORs get a quick link to the admin dashboard. Hidden for
-          regular USERs, who have nothing to manage. */}
-      {user.role === "EDITOR" && (
-        <Link
-          to="/admin"
-          className="text-sm font-medium hover:text-asta-red"
-          title="Verwaltung"
-        >
-          Admin
-        </Link>
-      )}
-      <Link
-        to="/profile"
-        className="text-sm font-medium hover:text-asta-red"
-        title="Mein Profil"
-      >
-        Mein Profil
-      </Link>
-      {/* Tailwind v4 removed the default `cursor: pointer` on <button>,
-          so we add it explicitly to match users' click-affordance expectations. */}
-      <Button
-        onClick={handleLogout}
-        size="sm"
-        variant="ghost"
-        className="cursor-pointer"
-      >
-        Logout
-      </Button>
-    </div>
+    <Link
+      to="/profile"
+      aria-label="Mein Profil"
+      title="Mein Profil"
+      className="hover:opacity-80 transition-opacity"
+    >
+      <img
+        src="/profile-icon.png"
+        alt="Mein Profil"
+        className="h-10 w-10"
+      />
+    </Link>
   );
 }
