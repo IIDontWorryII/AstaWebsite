@@ -138,5 +138,9 @@
   }
   html {
     @apply font-sans;
+    /* Always reserve space for the vertical scrollbar so the page doesn't
+       shift horizontally when navigating between a tall page (scrollbar
+       shown) and a short one (no scrollbar). */
+    scrollbar-gutter: stable;
   }
 }

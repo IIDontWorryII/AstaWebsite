@@ -1,6 +1,8 @@
 // client/src/components/Header.tsx
 
-import { Link, NavLink } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, NavLink, useLocation } from "react-router-dom";
+import { Menu, X } from "lucide-react";
 import {
   NavigationMenu,
   NavigationMenuContent,
@@ -56,6 +58,14 @@ const gremienSections = [
 export default function Header() {
   // EDITORs get an "Admin" entry in the central nav (right of Sport).
   const { user } = useAuth();
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  // Close the mobile menu whenever the route (path or hash) changes, so a
+  // tap on a link dismisses the panel without per-link handlers.
+  const location = useLocation();
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [location.pathname, location.hash]);
 
   return (
     <header className="sticky top-0 bg-white border-b border-gray-200 z-50">
@@ -128,8 +138,9 @@ export default function Header() {
           )}
         </nav>
 
-        {/* Right: social icons, then the auth widget (profile / login). */}
-        <div className="flex items-center gap-4">
+        {/* Right (desktop): social icons, then the auth widget. Hidden on
+            mobile, where everything moves into the hamburger panel. */}
+        <div className="hidden md:flex items-center gap-4">
           <a
             href={SOCIAL_LINKS.instagram}
             target="_blank"
@@ -161,8 +172,133 @@ export default function Header() {
 
           <AuthWidget />
         </div>
+
+        {/* Hamburger (mobile only) */}
+        <button
+          type="button"
+          className="md:hidden p-2 -mr-2 text-gray-700 hover:text-asta-red cursor-pointer"
+          aria-label={mobileOpen ? "Menü schließen" : "Menü öffnen"}
+          aria-expanded={mobileOpen}
+          aria-controls="mobile-menu"
+          onClick={() => setMobileOpen((o) => !o)}
+        >
+          {mobileOpen ? (
+            <X className="h-7 w-7" />
+          ) : (
+            <Menu className="h-7 w-7" />
+          )}
+        </button>
       </div>
+
+      {/* Mobile menu panel */}
+      {mobileOpen && <MobileMenu user={user} />}
     </header>
+  );
+}
+
+/** Stacked navigation shown below the bar on mobile when the hamburger is open. */
+function MobileMenu({
+  user,
+}: {
+  user: ReturnType<typeof useAuth>["user"];
+}) {
+  const itemClass =
+    "block py-2 text-base font-medium text-gray-800 hover:text-asta-red";
+
+  return (
+    <div
+      id="mobile-menu"
+      className="md:hidden border-t border-gray-200 bg-white max-h-[calc(100vh-5rem)] overflow-y-auto"
+    >
+      <nav className="max-w-7xl mx-auto px-6 py-4">
+        <NavLink to="/" end className={itemClass}>
+          Home
+        </NavLink>
+
+        {/* Gremien with its subsections inline (no mega-menu on mobile). */}
+        <div className="py-2">
+          <span className="block text-sm font-bold uppercase tracking-wide text-asta-red">
+            Gremien
+          </span>
+          <ul className="mt-1 pl-3 space-y-1">
+            {gremienSections.map((section) => (
+              <li key={section.title}>
+                <Link to={section.href} className={itemClass}>
+                  {section.title}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {navItems.map((item) => (
+          <NavLink key={item.to} to={item.to} className={itemClass}>
+            {item.label}
+          </NavLink>
+        ))}
+
+        {user?.role === "EDITOR" && (
+          <NavLink to="/admin" className={itemClass}>
+            Admin
+          </NavLink>
+        )}
+
+        {/* Auth + socials */}
+        <div className="mt-3 pt-3 border-t border-gray-200">
+          {user ? (
+            <Link to="/profile" className={itemClass}>
+              Mein Profil
+            </Link>
+          ) : (
+            <div className="flex items-center gap-4 py-1">
+              <Link
+                to="/login"
+                className="text-base font-medium hover:text-asta-red"
+              >
+                Login
+              </Link>
+              <Link
+                to="/signup"
+                className="text-base font-medium text-asta-red"
+              >
+                Registrieren
+              </Link>
+            </div>
+          )}
+
+          <div className="flex items-center gap-4 mt-3">
+            <a
+              href={SOCIAL_LINKS.instagram}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Instagram"
+              className="hover:opacity-70 transition-opacity"
+            >
+              <img
+                src="/Instagram_logo_2016.svg"
+                alt=""
+                aria-hidden="true"
+                className="h-6 w-6"
+              />
+            </a>
+            <a
+              href={SOCIAL_LINKS.tiktok}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="TikTok"
+              className="hover:opacity-70 transition-opacity"
+            >
+              <img
+                src="/tiktok-icon-2.svg"
+                alt=""
+                aria-hidden="true"
+                className="h-6 w-6"
+              />
+            </a>
+          </div>
+        </div>
+      </nav>
+    </div>
   );
 }
 

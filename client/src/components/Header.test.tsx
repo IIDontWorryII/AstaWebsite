@@ -7,7 +7,8 @@
 // `mockUseAuth` is a vi.fn() so each test can change what useAuth returns
 // (logged out vs logged in vs loading) before rendering.
 
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import Header from "./Header";
@@ -150,6 +151,35 @@ describe("Header", () => {
 
     const adminLink = screen.getByRole("link", { name: "Admin" });
     expect(adminLink).toHaveAttribute("href", "/admin");
+  });
+
+  it("opens the mobile menu from the hamburger and shows the nav links", async () => {
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter initialEntries={["/"]}>
+        <Header />
+      </MemoryRouter>,
+    );
+
+    // Panel is not mounted until the hamburger is tapped.
+    expect(document.getElementById("mobile-menu")).toBeNull();
+
+    await user.click(screen.getByRole("button", { name: "Menü öffnen" }));
+
+    const panel = document.getElementById("mobile-menu");
+    expect(panel).not.toBeNull();
+    // Nav links live inside the panel.
+    expect(
+      within(panel as HTMLElement).getByRole("link", { name: "Eventkalender" }),
+    ).toBeInTheDocument();
+    expect(
+      within(panel as HTMLElement).getByRole("link", { name: "BaRACke" }),
+    ).toBeInTheDocument();
+
+    // Hamburger flips to a close affordance.
+    expect(
+      screen.getByRole("button", { name: "Menü schließen" }),
+    ).toBeInTheDocument();
   });
 
   it("renders no auth controls while loading", () => {
