@@ -20,6 +20,7 @@ import type {
   AuthResponse,
   PageDTO,
   PageSectionDTO,
+  PublicUser,
 } from "../shared/types.js";
 import { hashPassword, verifyPassword } from "./auth/passwords.js";
 import { signToken } from "./auth/tokens.js";
@@ -53,6 +54,11 @@ import {
   parseSectionImage,
   storeSectionImage,
 } from "./upload/sectionImages.js";
+import {
+  deleteAvatarImageByUrl,
+  parseAvatarImage,
+  storeAvatarImage,
+} from "./upload/avatarImages.js";
 
 export const prisma = new PrismaClient();
 export const app = express();
@@ -322,6 +328,26 @@ app.delete(
   },
 );
 
+// Serialize a Prisma User row into the public (no password hash) shape the
+// frontend consumes. Single source of truth for signup/login/me/PATCH.
+function toPublicUser(user: {
+  id: string;
+  email: string;
+  displayName: string;
+  role: string;
+  avatarUrl: string | null;
+  createdAt: Date;
+}): PublicUser {
+  return {
+    id: user.id,
+    email: user.email,
+    displayName: user.displayName,
+    role: user.role as "USER" | "EDITOR",
+    avatarUrl: user.avatarUrl,
+    createdAt: user.createdAt.toISOString(),
+  };
+}
+
 app.post(
   "/api/signup",
   async (req: Request, res: Response<AuthResponse | { error: string }>) => {
@@ -359,15 +385,7 @@ app.post(
       const token = signToken({ sub: user.id, role: "USER" });
       setAuthCookie(res, token);
 
-      return res.json({
-        user: {
-          id: user.id,
-          email: user.email,
-          displayName: user.displayName,
-          role: "USER",
-          createdAt: user.createdAt.toISOString(),
-        },
-      });
+      return res.json({ user: toPublicUser(user) });
     } catch (e) {
       if (
         e instanceof Prisma.PrismaClientKnownRequestError &&
@@ -409,15 +427,7 @@ app.post(
     const token = signToken({ sub: user.id, role });
     setAuthCookie(res, token);
 
-    return res.json({
-      user: {
-        id: user.id,
-        email: user.email,
-        displayName: user.displayName,
-        role,
-        createdAt: user.createdAt.toISOString(),
-      },
-    });
+    return res.json({ user: toPublicUser(user) });
   },
 );
 
@@ -443,15 +453,50 @@ app.get(
       return res.status(401).json({ error: "Not authenticated" });
     }
 
-    return res.json({
-      user: {
-        id: user.id,
-        email: user.email,
-        displayName: user.displayName,
-        role: user.role as "USER" | "EDITOR",
-        createdAt: user.createdAt.toISOString(),
-      },
+    return res.json({ user: toPublicUser(user) });
+  },
+);
+
+// Update the current user's profile: display name and/or avatar. Multipart
+// so an optional new avatar image can ride along. `removeAvatar=true` clears
+// the current avatar (and deletes it from R2). A new upload always wins.
+app.patch(
+  "/api/me",
+  requireAuth,
+  parseAvatarImage,
+  async (req: Request, res: Response<AuthResponse | { error: string }>) => {
+    const { id } = req.user!;
+    const existing = await prisma.user.findUnique({ where: { id } });
+    if (!existing) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    const updatePayload: { displayName?: string; avatarUrl?: string | null } =
+      {};
+
+    // displayName: optional, but if present must be non-empty.
+    if (typeof req.body.displayName === "string") {
+      const name = req.body.displayName.trim();
+      if (name.length === 0) {
+        return res.status(400).json({ error: "Name darf nicht leer sein" });
+      }
+      updatePayload.displayName = name;
+    }
+
+    if (req.file) {
+      // Upload new avatar first, then delete the old one from R2.
+      updatePayload.avatarUrl = await storeAvatarImage(req.file);
+      await deleteAvatarImageByUrl(existing.avatarUrl);
+    } else if (req.body.removeAvatar === "true") {
+      updatePayload.avatarUrl = null;
+      await deleteAvatarImageByUrl(existing.avatarUrl);
+    }
+
+    const user = await prisma.user.update({
+      where: { id },
+      data: updatePayload,
     });
+    return res.json({ user: toPublicUser(user) });
   },
 );
 

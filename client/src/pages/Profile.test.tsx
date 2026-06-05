@@ -1,8 +1,8 @@
 // client/src/pages/Profile.test.tsx
 //
-// Profile now hosts the Logout button (moved off the header in AW-46).
-// We mock useAuth so we can assert account info renders and that clicking
-// Logout calls the context's logout().
+// Profile hosts account info, the Logout button, and the edit form
+// (display name + avatar). We mock useAuth so we can assert rendering and
+// that Logout / Save call the right context methods.
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
@@ -20,21 +20,28 @@ const user = {
   email: "test@example.com",
   displayName: "Testuser",
   role: "USER" as const,
+  avatarUrl: null,
   createdAt: "2026-01-01T00:00:00.000Z",
 };
 
-beforeEach(() => {
-  mockUseAuth.mockReturnValue({
+function authValue(over: Record<string, unknown> = {}) {
+  return {
     user,
     loading: false,
     logout: vi.fn().mockResolvedValue(undefined),
+    updateProfile: vi.fn().mockResolvedValue(undefined),
     signup: vi.fn(),
     login: vi.fn(),
-  });
+    ...over,
+  };
+}
+
+beforeEach(() => {
+  mockUseAuth.mockReturnValue(authValue());
 });
 
 describe("Profile", () => {
-  it("renders account info and a Logout button", () => {
+  it("renders account info, the edit form, and a Logout button", () => {
     render(
       <MemoryRouter>
         <Profile />
@@ -45,18 +52,13 @@ describe("Profile", () => {
       screen.getByRole("heading", { name: "Mein Profil" }),
     ).toBeInTheDocument();
     expect(screen.getByText("test@example.com")).toBeInTheDocument();
+    expect(screen.getByLabelText("Anzeigename")).toHaveValue("Testuser");
     expect(screen.getByRole("button", { name: "Logout" })).toBeInTheDocument();
   });
 
   it("calls logout when the Logout button is clicked", async () => {
     const logout = vi.fn().mockResolvedValue(undefined);
-    mockUseAuth.mockReturnValue({
-      user,
-      loading: false,
-      logout,
-      signup: vi.fn(),
-      login: vi.fn(),
-    });
+    mockUseAuth.mockReturnValue(authValue({ logout }));
 
     render(
       <MemoryRouter>
@@ -66,5 +68,25 @@ describe("Profile", () => {
 
     await userEvent.click(screen.getByRole("button", { name: "Logout" }));
     expect(logout).toHaveBeenCalledTimes(1);
+  });
+
+  it("saves the edited name via updateProfile", async () => {
+    const updateProfile = vi.fn().mockResolvedValue(undefined);
+    mockUseAuth.mockReturnValue(authValue({ updateProfile }));
+
+    render(
+      <MemoryRouter>
+        <Profile />
+      </MemoryRouter>,
+    );
+
+    const nameInput = screen.getByLabelText("Anzeigename");
+    await userEvent.clear(nameInput);
+    await userEvent.type(nameInput, "Neuer Name");
+    await userEvent.click(screen.getByRole("button", { name: "Speichern" }));
+
+    expect(updateProfile).toHaveBeenCalledTimes(1);
+    const [input] = updateProfile.mock.calls[0];
+    expect(input).toEqual({ displayName: "Neuer Name" });
   });
 });

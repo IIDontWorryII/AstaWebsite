@@ -17,6 +17,8 @@ export interface PublicUser {
   email: string;
   displayName: string;
   role: UserRole;
+  /** URL of the user's uploaded avatar, or null if none set. */
+  avatarUrl: string | null;
   createdAt: string; // ISO 8601
 }
 

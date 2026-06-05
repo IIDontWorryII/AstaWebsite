@@ -342,8 +342,9 @@ function AuthWidget() {
     );
   }
 
-  // Logged in: a profile icon (a touch larger than the social icons so it
-  // reads as a distinct control) linking to the profile page.
+  // Logged in: the user's avatar (or the default icon) linking to the
+  // profile page. A touch larger than the social icons so it reads as a
+  // distinct control.
   return (
     <Link
       to="/profile"
@@ -352,9 +353,9 @@ function AuthWidget() {
       className="hover:opacity-80 transition-opacity"
     >
       <img
-        src="/profile-icon.png"
+        src={user.avatarUrl ?? "/profile-icon.png"}
         alt="Mein Profil"
-        className="h-10 w-10"
+        className="h-10 w-10 rounded-full object-cover"
       />
     </Link>
   );

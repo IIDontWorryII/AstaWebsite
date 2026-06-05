@@ -28,8 +28,10 @@ import {
   login as apiLogin,
   logout as apiLogout,
   signup as apiSignup,
+  updateProfile as apiUpdateProfile,
   type LoginInput,
   type SignupInput,
+  type UpdateProfileInput,
 } from "@/lib/auth";
 
 interface AuthContextValue {
@@ -40,6 +42,11 @@ interface AuthContextValue {
   signup: (input: SignupInput) => Promise<void>;
   login: (input: LoginInput) => Promise<void>;
   logout: () => Promise<void>;
+  updateProfile: (
+    input: UpdateProfileInput,
+    avatar?: File | null,
+    removeAvatar?: boolean,
+  ) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -87,11 +94,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
   }, []);
 
+  const updateProfile = useCallback(
+    async (
+      input: UpdateProfileInput,
+      avatar?: File | null,
+      removeAvatar?: boolean,
+    ) => {
+      const u = await apiUpdateProfile(input, avatar, removeAvatar);
+      setUser(u);
+    },
+    [],
+  );
+
   // Memoize the context value so consumers don't re-render unless the
   // actual contents change.
   const value = useMemo(
-    () => ({ user, loading, signup, login, logout }),
-    [user, loading, signup, login, logout],
+    () => ({ user, loading, signup, login, logout, updateProfile }),
+    [user, loading, signup, login, logout, updateProfile],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

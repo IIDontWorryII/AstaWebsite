@@ -174,3 +174,36 @@ describe("GET /api/me", () => {
     expect(res.status).toBe(401);
   });
 });
+
+describe("PATCH /api/me", () => {
+  it("updates the display name of the logged-in user", async () => {
+    const email = `test-signup-patch-${Date.now()}@example.com`;
+    const agent = request.agent(app);
+    await agent
+      .post("/api/signup")
+      .send({ email, password: "password123", displayName: "Before" })
+      .expect(200);
+
+    const res = await agent.patch("/api/me").field("displayName", "After");
+    expect(res.status).toBe(200);
+    expect(res.body.user.displayName).toBe("After");
+    expect(res.body.user.avatarUrl).toBeNull();
+  });
+
+  it("rejects an empty display name with 400", async () => {
+    const email = `test-signup-patch-empty-${Date.now()}@example.com`;
+    const agent = request.agent(app);
+    await agent
+      .post("/api/signup")
+      .send({ email, password: "password123", displayName: "Name" })
+      .expect(200);
+
+    const res = await agent.patch("/api/me").field("displayName", "   ");
+    expect(res.status).toBe(400);
+  });
+
+  it("returns 401 when not authenticated", async () => {
+    const res = await request(app).patch("/api/me").field("displayName", "X");
+    expect(res.status).toBe(401);
+  });
+});

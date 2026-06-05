@@ -1,24 +1,44 @@
 // client/src/pages/Profile.tsx
 //
 // User profile page. Gated: redirects to /login if not authenticated.
-// Currently shows account info + a placeholder for future ticket purchases.
+// Shows account info, an avatar, an edit form (display name + avatar), and
+// a Logout button.
 
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import { useAuth } from "@/auth/AuthContext";
 import { Button } from "@/components/ui/button";
 
 export default function Profile() {
-  // Pull the current user from context. `loading` is true during the initial
-  // /api/me check on app load; without it, we'd briefly redirect logged-in
-  // users to /login on every page refresh (because user is null until /me
-  // resolves).
-  const { user, loading, logout } = useAuth();
+  const { user, loading, logout, updateProfile } = useAuth();
   const navigate = useNavigate();
 
-  // Logout lives here now (moved off the header in AW-46). Navigate home
-  // *before* awaiting logout(): once logout resolves user becomes null, and
-  // if we were still on /profile its guard would redirect to /login and win
-  // the race. Leaving first lets the user land on Home as intended.
+  // Edit-form state. Initialized from the user once it's available.
+  const [name, setName] = useState("");
+  const [file, setFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [removeAvatar, setRemoveAvatar] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Seed the name field once the user loads.
+  useEffect(() => {
+    if (user) setName(user.displayName);
+  }, [user]);
+
+  // Local preview for a freshly-picked avatar; revoke the blob URL on change.
+  useEffect(() => {
+    if (!file) {
+      setPreviewUrl(null);
+      return;
+    }
+    const url = URL.createObjectURL(file);
+    setPreviewUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [file]);
+
   async function handleLogout() {
     navigate("/", { replace: true });
     try {
@@ -28,8 +48,24 @@ export default function Profile() {
     }
   }
 
-  // While the session check is pending, show a loading state. The Layout
-  // wrapper provides the header/footer; we just fill the main area.
+  async function handleSave(e: FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setMessage(null);
+    setSubmitting(true);
+    try {
+      await updateProfile({ displayName: name }, file, removeAvatar);
+      setFile(null);
+      setRemoveAvatar(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      setMessage("Profil gespeichert.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Speichern fehlgeschlagen");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
   if (loading) {
     return (
       <section className="max-w-3xl mx-auto px-6 py-16">
@@ -37,29 +73,32 @@ export default function Profile() {
       </section>
     );
   }
-
-  // No user → bounce to login. `replace` means the current entry (/profile)
-  // is replaced in browser history rather than pushed, so hitting back from
-  // /login doesn't loop back to /profile.
   if (!user) {
     return <Navigate to="/login" replace />;
   }
 
+  // Which image to show: new pick → current avatar (unless removing) → icon.
+  const avatarSrc =
+    previewUrl ?? (removeAvatar ? null : user.avatarUrl) ?? "/profile-icon.png";
+
   return (
     <section className="max-w-3xl mx-auto px-6 py-16">
-      <h1 className="text-3xl font-bold mb-8">Mein Profil</h1>
+      <div className="flex items-center gap-4 mb-8">
+        <img
+          src={avatarSrc}
+          alt="Profilbild"
+          className="h-20 w-20 rounded-full object-cover border border-gray-200"
+        />
+        <h1 className="text-3xl font-bold">Mein Profil</h1>
+      </div>
 
-      {/* Account info — read-only for now. Editing is a later ticket. */}
+      {/* Account info — read-only. */}
       <dl className="grid grid-cols-[8rem_1fr] gap-y-3 text-sm">
-        <dt className="font-semibold text-gray-700">Name</dt>
-        <dd>{user.displayName}</dd>
-
         <dt className="font-semibold text-gray-700">Email</dt>
         <dd>{user.email}</dd>
 
         <dt className="font-semibold text-gray-700">Rolle</dt>
         <dd>
-          {/* Show role with a small badge style so EDITOR is visually distinct. */}
           <span
             className={
               user.role === "EDITOR"
@@ -75,9 +114,67 @@ export default function Profile() {
         <dd>{new Date(user.createdAt).toLocaleDateString("de-DE")}</dd>
       </dl>
 
-      {/* Placeholder for the future ticket system mentioned in the plan.
-          Visible so AStA members see the intended structure even before
-          tickets are implemented. */}
+      {/* Edit form: display name + avatar. */}
+      <form onSubmit={handleSave} className="mt-12 border-t pt-8 space-y-4">
+        <h2 className="text-xl font-semibold">Profil bearbeiten</h2>
+
+        <div>
+          <label htmlFor="displayName" className="block text-sm font-semibold mb-1">
+            Anzeigename
+          </label>
+          <input
+            id="displayName"
+            type="text"
+            required
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className="w-full max-w-sm border border-gray-300 rounded px-3 py-2"
+          />
+        </div>
+
+        <div>
+          <label htmlFor="avatar" className="block text-sm font-semibold mb-1">
+            Profilbild{" "}
+            <span className="text-gray-500 font-normal">
+              (optional, wird quadratisch zugeschnitten)
+            </span>
+          </label>
+          <input
+            id="avatar"
+            ref={fileInputRef}
+            type="file"
+            accept="image/png,image/jpeg,image/webp"
+            onChange={(e) => {
+              setFile(e.target.files?.[0] ?? null);
+              if (e.target.files?.[0]) setRemoveAvatar(false);
+            }}
+            className="block w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-gray-100 file:cursor-pointer hover:file:bg-gray-200"
+          />
+          {user.avatarUrl && !file && (
+            <label className="flex items-center gap-2 mt-2 text-sm text-gray-700 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={removeAvatar}
+                onChange={(e) => setRemoveAvatar(e.target.checked)}
+              />
+              Profilbild entfernen
+            </label>
+          )}
+        </div>
+
+        {error && (
+          <p className="text-red-600 text-sm" role="alert">
+            Fehler: {error}
+          </p>
+        )}
+        {message && <p className="text-green-700 text-sm">{message}</p>}
+
+        <Button type="submit" disabled={submitting} className="cursor-pointer">
+          {submitting ? "Speichert…" : "Speichern"}
+        </Button>
+      </form>
+
+      {/* Placeholder for the future ticket system. */}
       <section className="mt-12 border-t pt-8">
         <h2 className="text-xl font-semibold mb-2">Meine Tickets</h2>
         <p className="text-gray-500">
@@ -85,7 +182,7 @@ export default function Profile() {
         </p>
       </section>
 
-      {/* Logout lives at the bottom of the profile (moved off the header). */}
+      {/* Logout at the bottom. */}
       <div className="mt-12 border-t pt-8">
         <Button
           onClick={handleLogout}

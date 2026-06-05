@@ -7,6 +7,7 @@
 
 import type { AuthResponse, PublicUser } from "../../../shared/types";
 import { apiFetch, jsonOrThrow } from "./api";
+import { compressImage } from "./image";
 
 export interface SignupInput {
   email: string;
@@ -50,5 +51,32 @@ export async function getMe(): Promise<PublicUser | null> {
   const res = await apiFetch("/api/me");
   if (res.status === 401) return null;
   const { user } = await jsonOrThrow<AuthResponse>(res, "Failed to fetch current user");
+  return user;
+}
+
+export interface UpdateProfileInput {
+  displayName?: string;
+}
+
+/**
+ * Update the current user's profile (name and/or avatar). Multipart so an
+ * optional new avatar rides along; it's compressed client-side first.
+ * `removeAvatar: true` clears the current avatar. A new file always wins.
+ */
+export async function updateProfile(
+  input: UpdateProfileInput,
+  avatar?: File | null,
+  removeAvatar?: boolean,
+): Promise<PublicUser> {
+  const fd = new FormData();
+  if (input.displayName !== undefined) fd.append("displayName", input.displayName);
+  if (avatar) fd.append("avatar", await compressImage(avatar));
+  else if (removeAvatar) fd.append("removeAvatar", "true");
+
+  const res = await apiFetch("/api/me", { method: "PATCH", body: fd });
+  const { user } = await jsonOrThrow<AuthResponse>(
+    res,
+    "Profil speichern fehlgeschlagen",
+  );
   return user;
 }
