@@ -8,7 +8,8 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import type { EventDTO, ProtocolDTO } from "../../../shared/types";
 import { fetchEvents, fetchProtocols } from "@/lib/api";
-import { formatCountdown, formatEventDate, selectUpcoming } from "@/lib/events";
+import { selectUpcoming } from "@/lib/events";
+import EventCard from "@/components/EventCard";
 
 export default function EventsSection() {
   const [events, setEvents] = useState<EventDTO[]>([]);
@@ -61,27 +62,7 @@ export default function EventsSection() {
               <p className="text-gray-500">Zur Zeit sind keine Events geplant.</p>
             ) : (
               upcoming.map((event) => (
-                <article
-                  key={event.id}
-                  className="border border-gray-200 rounded-2xl overflow-hidden flex flex-col"
-                >
-                  {event.imageUrl && (
-                    <img
-                      src={event.imageUrl}
-                      alt={event.title}
-                      className="aspect-[4/3] w-full object-cover"
-                    />
-                  )}
-                  <div className="p-4">
-                    <h3 className="font-semibold">{event.title}</h3>
-                    <p className="text-sm text-gray-600 mt-1">
-                      {formatEventDate(event.startsAt)}
-                    </p>
-                    <span className="mt-2 inline-block rounded-full bg-asta-red/10 text-asta-red text-xs font-semibold px-3 py-1">
-                      {formatCountdown(new Date(event.startsAt).getTime() - now)}
-                    </span>
-                  </div>
-                </article>
+                <EventCard key={event.id} event={event} now={now} />
               ))
             )}
           </div>
