@@ -11,6 +11,8 @@ import { apiFetch, jsonOrThrow, fetchProtocols } from "./api";
 export interface ProtocolFormInput {
   gremium: string;
   title: string;
+  /** Optional short summary. "" clears it on update. */
+  description?: string;
   /** ISO 8601 string. UI uses datetime-local; convert with new Date(value).toISOString(). */
   meetingDate: string;
 }

@@ -12,6 +12,7 @@ export function toProtocolDTO(p: PrismaProtocol): ProtocolDTO {
     id: p.id,
     gremium: p.gremium,
     title: p.title,
+    description: p.description,
     meetingDate: p.meetingDate.toISOString(),
     fileUrl: p.fileUrl,
     uploadedAt: p.uploadedAt.toISOString(),

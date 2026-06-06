@@ -34,6 +34,7 @@ const baseProtocol: ProtocolDTO = {
   id: "protocol-1",
   gremium: "ASTA",
   title: "Sommerfest-Planung",
+  description: null,
   meetingDate: "2026-04-15T00:00:00.000Z",
   fileUrl: "/uploads/protocols/abc.pdf",
   uploadedAt: "2026-04-16T10:00:00.000Z",

@@ -250,6 +250,7 @@ app.post(
       data: {
         gremium: data.gremium,
         title: data.title,
+        description: data.description || null,
         meetingDate: new Date(data.meetingDate),
         fileUrl,
       },
@@ -286,11 +287,15 @@ app.put(
     const updatePayload: {
       gremium?: string;
       title?: string;
+      description?: string | null;
       meetingDate?: Date;
       fileUrl?: string;
     } = {};
     if (data.gremium !== undefined) updatePayload.gremium = data.gremium;
     if (data.title !== undefined) updatePayload.title = data.title;
+    // Empty string clears the description.
+    if (data.description !== undefined)
+      updatePayload.description = data.description === "" ? null : data.description;
     if (data.meetingDate !== undefined)
       updatePayload.meetingDate = new Date(data.meetingDate);
     if (req.file) {

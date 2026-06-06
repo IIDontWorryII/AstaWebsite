@@ -92,9 +92,16 @@ export default function EventsSection() {
                       href={p.fileUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="bg-white rounded-lg p-3 flex items-center justify-between hover:bg-asta-red hover:text-white"
+                      className="bg-white rounded-lg p-3 flex items-center justify-between gap-2 hover:bg-asta-red hover:text-white"
                     >
-                      <span className="text-sm">{p.title}</span>
+                      <span>
+                        <span className="block text-sm">{p.title}</span>
+                        {p.description && (
+                          <span className="block text-xs opacity-70">
+                            {p.description}
+                          </span>
+                        )}
+                      </span>
                       <span aria-hidden>↓</span>
                     </a>
                   </li>

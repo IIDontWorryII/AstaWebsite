@@ -47,6 +47,7 @@ const protocol: ProtocolDTO = {
   id: "p1",
   gremium: "ASTA",
   title: "AStA-Sitzung Protokoll",
+  description: null,
   meetingDate: iso(-DAY),
   fileUrl: "https://example.com/p1.pdf",
   uploadedAt: iso(-DAY),

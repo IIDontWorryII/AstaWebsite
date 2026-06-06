@@ -64,6 +64,7 @@ export default function ProtocolForm({ protocol }: ProtocolFormProps) {
     protocol?.gremium ?? GREMIUM_OPTIONS[0].value,
   );
   const [title, setTitle] = useState(protocol?.title ?? "");
+  const [description, setDescription] = useState(protocol?.description ?? "");
   const [meetingDate, setMeetingDate] = useState(
     protocol ? isoToDateInputValue(protocol.meetingDate) : "",
   );
@@ -101,6 +102,7 @@ export default function ProtocolForm({ protocol }: ProtocolFormProps) {
       const input: ProtocolFormInput = {
         gremium,
         title,
+        description,
         meetingDate: dateInputValueToISO(meetingDate),
       };
 
@@ -158,6 +160,24 @@ export default function ProtocolForm({ protocol }: ProtocolFormProps) {
             placeholder="z.B. Sitzung Sommerfest-Planung"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
+            className="w-full border border-gray-300 rounded px-3 py-2"
+          />
+        </div>
+
+        <div>
+          <label
+            htmlFor="description"
+            className="block text-sm font-semibold mb-1"
+          >
+            Beschreibung{" "}
+            <span className="text-gray-500 font-normal">(optional)</span>
+          </label>
+          <textarea
+            id="description"
+            rows={3}
+            placeholder="Kurz: worum ging es in der Sitzung?"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
             className="w-full border border-gray-300 rounded px-3 py-2"
           />
         </div>

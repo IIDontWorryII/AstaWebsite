@@ -56,6 +56,26 @@ describe("GremiumProtocols", () => {
     expect(mockFetchProtocols).toHaveBeenCalledWith("STUPA");
   });
 
+  it("renders the protocol description when present", async () => {
+    mockFetchProtocols.mockResolvedValueOnce([
+      {
+        id: "p-desc",
+        gremium: "ASTA",
+        title: "AStA-Sitzung",
+        description: "Worum es in der Sitzung ging",
+        meetingDate: "2026-04-15T00:00:00.000Z",
+        fileUrl: "/uploads/protocols/x.pdf",
+        uploadedAt: "2026-04-15T00:00:00.000Z",
+      },
+    ]);
+
+    render(<GremiumProtocols gremium="ASTA" />);
+
+    expect(
+      await screen.findByText("Worum es in der Sitzung ging"),
+    ).toBeInTheDocument();
+  });
+
   it("shows an error message when fetchProtocols rejects", async () => {
     mockFetchProtocols.mockRejectedValueOnce(new Error("network down"));
 

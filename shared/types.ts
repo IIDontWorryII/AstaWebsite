@@ -69,6 +69,8 @@ export interface ProtocolDTO {
   id: string;
   gremium: string;
   title: string;
+  /** Optional short summary of what the meeting covered. */
+  description: string | null;
   meetingDate: string;
   fileUrl: string;
   uploadedAt: string;

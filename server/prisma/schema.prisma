@@ -117,6 +117,7 @@ model Protocol {
   id          String   @id @default(uuid())
   gremium     String
   title       String
+  description String?
   meetingDate DateTime
   fileUrl     String
   uploadedAt  DateTime @default(now())

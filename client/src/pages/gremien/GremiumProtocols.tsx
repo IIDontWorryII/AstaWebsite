@@ -55,6 +55,11 @@ export default function GremiumProtocols({ gremium }: GremiumProtocolsProps) {
                     {new Date(p.meetingDate).toLocaleDateString("de-DE")}
                   </p>
                   <p className="text-sm opacity-80">{p.title}</p>
+                  {p.description && (
+                    <p className="text-sm opacity-70 mt-1 whitespace-pre-line">
+                      {p.description}
+                    </p>
+                  )}
                 </div>
                 <span aria-hidden className="text-2xl">
                   ↓

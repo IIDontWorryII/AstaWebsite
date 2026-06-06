@@ -130,6 +130,28 @@ describe("POST /api/protocols", () => {
     expect(contentType).toBe("application/pdf");
   });
 
+  it("stores an optional description on create and clears it on update", async () => {
+    const created = await editorAgent
+      .post("/api/protocols")
+      .field("gremium", "ASTA")
+      .field("title", uniqueTitle("desc"))
+      .field("description", "Kurzfassung der Sitzung")
+      .field("meetingDate", "2026-04-15T18:00:00.000Z")
+      .attach("file", MINIMAL_PDF, {
+        filename: "p.pdf",
+        contentType: "application/pdf",
+      })
+      .expect(201);
+    expect(created.body.description).toBe("Kurzfassung der Sitzung");
+
+    // Empty string clears it.
+    const cleared = await editorAgent
+      .put(`/api/protocols/${created.body.id}`)
+      .field("description", "")
+      .expect(200);
+    expect(cleared.body.description).toBeNull();
+  });
+
   it("returns 400 when the PDF is missing (file is required)", async () => {
     const res = await editorAgent
       .post("/api/protocols")

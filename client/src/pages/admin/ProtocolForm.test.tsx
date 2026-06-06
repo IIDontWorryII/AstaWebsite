@@ -49,6 +49,7 @@ const existingProtocol: ProtocolDTO = {
   id: "protocol-existing",
   gremium: "STUPA",
   title: "Existing Protocol",
+  description: "Vorhandene Beschreibung",
   meetingDate: "2026-04-15T00:00:00.000Z",
   fileUrl: "/uploads/protocols/existing.pdf",
   uploadedAt: "2026-04-16T10:00:00.000Z",

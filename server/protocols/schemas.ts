@@ -15,6 +15,8 @@ export const ProtocolCreateInput = z.object({
   // up and the full set of valid values is known.
   gremium: z.string().min(1, "Gremium is required"),
   title: z.string().min(1, "Title is required"),
+  // Optional short summary. Empty string on update clears it (handled in route).
+  description: z.string().optional(),
   // ISO 8601 timestamp. The client sends `new Date(value).toISOString()`.
   meetingDate: z.string().datetime("meetingDate must be an ISO 8601 timestamp"),
 });
