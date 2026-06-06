@@ -10,7 +10,7 @@ import { useAuth } from "@/auth/AuthContext";
 import { Button } from "@/components/ui/button";
 
 export default function Profile() {
-  const { user, loading, logout, updateProfile } = useAuth();
+  const { user, loading, logout, updateProfile, changePassword } = useAuth();
   const navigate = useNavigate();
 
   // Edit-form state. Initialized from the user once it's available.
@@ -22,6 +22,14 @@ export default function Profile() {
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Password-change form state.
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [pwSubmitting, setPwSubmitting] = useState(false);
+  const [pwMessage, setPwMessage] = useState<string | null>(null);
+  const [pwError, setPwError] = useState<string | null>(null);
 
   // Seed the name field once the user loads.
   useEffect(() => {
@@ -63,6 +71,32 @@ export default function Profile() {
       setError(err instanceof Error ? err.message : "Speichern fehlgeschlagen");
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  async function handlePasswordChange(e: FormEvent) {
+    e.preventDefault();
+    setPwError(null);
+    setPwMessage(null);
+    if (newPassword.length < 8) {
+      setPwError("Neues Passwort muss mindestens 8 Zeichen haben.");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setPwError("Die neuen Passwörter stimmen nicht überein.");
+      return;
+    }
+    setPwSubmitting(true);
+    try {
+      await changePassword({ currentPassword, newPassword });
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      setPwMessage("Passwort geändert.");
+    } catch (err) {
+      setPwError(err instanceof Error ? err.message : "Fehlgeschlagen");
+    } finally {
+      setPwSubmitting(false);
     }
   }
 
@@ -171,6 +205,80 @@ export default function Profile() {
 
         <Button type="submit" disabled={submitting} className="cursor-pointer">
           {submitting ? "Speichert…" : "Speichern"}
+        </Button>
+      </form>
+
+      {/* Change password. */}
+      <form
+        onSubmit={handlePasswordChange}
+        className="mt-12 border-t pt-8 space-y-4 max-w-sm"
+      >
+        <h2 className="text-xl font-semibold">Passwort ändern</h2>
+
+        <div>
+          <label
+            htmlFor="currentPassword"
+            className="block text-sm font-semibold mb-1"
+          >
+            Aktuelles Passwort
+          </label>
+          <input
+            id="currentPassword"
+            type="password"
+            autoComplete="current-password"
+            required
+            value={currentPassword}
+            onChange={(e) => setCurrentPassword(e.target.value)}
+            className="w-full border border-gray-300 rounded px-3 py-2"
+          />
+        </div>
+
+        <div>
+          <label
+            htmlFor="newPassword"
+            className="block text-sm font-semibold mb-1"
+          >
+            Neues Passwort{" "}
+            <span className="text-gray-500 font-normal">(min. 8 Zeichen)</span>
+          </label>
+          <input
+            id="newPassword"
+            type="password"
+            autoComplete="new-password"
+            required
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
+            className="w-full border border-gray-300 rounded px-3 py-2"
+          />
+        </div>
+
+        <div>
+          <label
+            htmlFor="confirmPassword"
+            className="block text-sm font-semibold mb-1"
+          >
+            Neues Passwort bestätigen
+          </label>
+          <input
+            id="confirmPassword"
+            type="password"
+            autoComplete="new-password"
+            required
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            className="w-full border border-gray-300 rounded px-3 py-2"
+          />
+        </div>
+
+        {pwError && (
+          <p className="text-red-600 text-sm" role="alert">
+            Fehler: {pwError}
+          </p>
+        )}
+        {pwMessage && <p className="text-green-700 text-sm">{pwMessage}</p>}
+
+        <Button type="submit" disabled={pwSubmitting} className="cursor-pointer">
+          {pwSubmitting ? "Speichert…" : "Passwort ändern"}
         </Button>
       </form>
 

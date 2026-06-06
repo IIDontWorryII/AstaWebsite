@@ -29,9 +29,11 @@ import {
   logout as apiLogout,
   signup as apiSignup,
   updateProfile as apiUpdateProfile,
+  changePassword as apiChangePassword,
   type LoginInput,
   type SignupInput,
   type UpdateProfileInput,
+  type ChangePasswordInput,
 } from "@/lib/auth";
 
 interface AuthContextValue {
@@ -47,6 +49,7 @@ interface AuthContextValue {
     avatar?: File | null,
     removeAvatar?: boolean,
   ) => Promise<void>;
+  changePassword: (input: ChangePasswordInput) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -106,11 +109,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [],
   );
 
+  // Password change doesn't alter the user object, so no setUser here.
+  const changePassword = useCallback(
+    (input: ChangePasswordInput) => apiChangePassword(input),
+    [],
+  );
+
   // Memoize the context value so consumers don't re-render unless the
   // actual contents change.
   const value = useMemo(
-    () => ({ user, loading, signup, login, logout, updateProfile }),
-    [user, loading, signup, login, logout, updateProfile],
+    () => ({
+      user,
+      loading,
+      signup,
+      login,
+      logout,
+      updateProfile,
+      changePassword,
+    }),
+    [user, loading, signup, login, logout, updateProfile, changePassword],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

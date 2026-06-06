@@ -207,3 +207,64 @@ describe("PATCH /api/me", () => {
     expect(res.status).toBe(401);
   });
 });
+
+describe("POST /api/me/password", () => {
+  it("changes the password (old stops working, new works)", async () => {
+    const email = `test-signup-pw-${Date.now()}@example.com`;
+    const agent = request.agent(app);
+    await agent
+      .post("/api/signup")
+      .send({ email, password: "oldpassword1", displayName: "PwUser" })
+      .expect(200);
+
+    const res = await agent
+      .post("/api/me/password")
+      .send({ currentPassword: "oldpassword1", newPassword: "newpassword2" });
+    expect(res.status).toBe(200);
+
+    // Old password no longer logs in; new one does.
+    await request(app)
+      .post("/api/login")
+      .send({ email, password: "oldpassword1" })
+      .expect(401);
+    await request(app)
+      .post("/api/login")
+      .send({ email, password: "newpassword2" })
+      .expect(200);
+  });
+
+  it("rejects a wrong current password with 400", async () => {
+    const email = `test-signup-pw-wrong-${Date.now()}@example.com`;
+    const agent = request.agent(app);
+    await agent
+      .post("/api/signup")
+      .send({ email, password: "oldpassword1", displayName: "PwUser" })
+      .expect(200);
+
+    const res = await agent
+      .post("/api/me/password")
+      .send({ currentPassword: "WRONG", newPassword: "newpassword2" });
+    expect(res.status).toBe(400);
+  });
+
+  it("rejects a too-short new password with 400", async () => {
+    const email = `test-signup-pw-short-${Date.now()}@example.com`;
+    const agent = request.agent(app);
+    await agent
+      .post("/api/signup")
+      .send({ email, password: "oldpassword1", displayName: "PwUser" })
+      .expect(200);
+
+    const res = await agent
+      .post("/api/me/password")
+      .send({ currentPassword: "oldpassword1", newPassword: "short" });
+    expect(res.status).toBe(400);
+  });
+
+  it("returns 401 when not authenticated", async () => {
+    const res = await request(app)
+      .post("/api/me/password")
+      .send({ currentPassword: "x", newPassword: "newpassword2" });
+    expect(res.status).toBe(401);
+  });
+});

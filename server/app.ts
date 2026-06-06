@@ -500,6 +500,45 @@ app.patch(
   },
 );
 
+// Change the current user's password. Requires the current password (proof
+// of identity) and a new password meeting the same rule as signup.
+app.post(
+  "/api/me/password",
+  requireAuth,
+  async (req: Request, res: Response<{ ok: true } | { error: string }>) => {
+    const { id } = req.user!;
+    const { currentPassword, newPassword } = req.body;
+
+    if (
+      typeof currentPassword !== "string" ||
+      typeof newPassword !== "string"
+    ) {
+      return res
+        .status(400)
+        .json({ error: "currentPassword and newPassword are required" });
+    }
+    if (newPassword.length < 8) {
+      return res
+        .status(400)
+        .json({ error: "Password must be at least 8 characters" });
+    }
+
+    const user = await prisma.user.findUnique({ where: { id } });
+    if (!user) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    if (!(await verifyPassword(currentPassword, user.passwordHash))) {
+      return res.status(400).json({ error: "Aktuelles Passwort ist falsch" });
+    }
+
+    await prisma.user.update({
+      where: { id },
+      data: { passwordHash: await hashPassword(newPassword) },
+    });
+    return res.json({ ok: true });
+  },
+);
+
 // ─── Gremium pages (read) ──────────────────────────────────────────────
 
 // Public: fetch a single Gremium page with all its sections, ordered.

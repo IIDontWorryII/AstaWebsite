@@ -80,3 +80,17 @@ export async function updateProfile(
   );
   return user;
 }
+
+export interface ChangePasswordInput {
+  currentPassword: string;
+  newPassword: string;
+}
+
+/** Change the logged-in user's password. Throws with the server message on failure. */
+export async function changePassword(input: ChangePasswordInput): Promise<void> {
+  const res = await apiFetch("/api/me/password", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+  await jsonOrThrow<{ ok: true }>(res, "Passwort ändern fehlgeschlagen");
+}

@@ -30,6 +30,7 @@ function authValue(over: Record<string, unknown> = {}) {
     loading: false,
     logout: vi.fn().mockResolvedValue(undefined),
     updateProfile: vi.fn().mockResolvedValue(undefined),
+    changePassword: vi.fn().mockResolvedValue(undefined),
     signup: vi.fn(),
     login: vi.fn(),
     ...over,
@@ -88,5 +89,37 @@ describe("Profile", () => {
     expect(updateProfile).toHaveBeenCalledTimes(1);
     const [input] = updateProfile.mock.calls[0];
     expect(input).toEqual({ displayName: "Neuer Name" });
+  });
+
+  it("changes the password via changePassword", async () => {
+    const changePassword = vi.fn().mockResolvedValue(undefined);
+    mockUseAuth.mockReturnValue(authValue({ changePassword }));
+
+    render(
+      <MemoryRouter>
+        <Profile />
+      </MemoryRouter>,
+    );
+
+    await userEvent.type(
+      screen.getByLabelText("Aktuelles Passwort"),
+      "oldpassword1",
+    );
+    await userEvent.type(
+      screen.getByLabelText(/^Neues Passwort \(/),
+      "newpassword2",
+    );
+    await userEvent.type(
+      screen.getByLabelText("Neues Passwort bestätigen"),
+      "newpassword2",
+    );
+    await userEvent.click(
+      screen.getByRole("button", { name: "Passwort ändern" }),
+    );
+
+    expect(changePassword).toHaveBeenCalledWith({
+      currentPassword: "oldpassword1",
+      newPassword: "newpassword2",
+    });
   });
 });
