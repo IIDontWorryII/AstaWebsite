@@ -11,6 +11,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { EventDTO } from "../../../shared/types";
 import { EVENT_CATEGORIES } from "../../../shared/types";
 import { fetchEvents } from "@/lib/api";
+import { useFavorites } from "@/auth/FavoritesContext";
 import EventCalendar from "@/components/EventCalendar";
 import EventCard from "@/components/EventCard";
 import EventDialog from "@/components/EventDialog";
@@ -31,6 +32,7 @@ export default function Eventkalender() {
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<EventDTO | null>(null);
   const [now, setNow] = useState(() => Date.now());
+  const favorites = useFavorites();
 
   // Filters.
   const [query, setQuery] = useState("");
@@ -39,6 +41,9 @@ export default function Eventkalender() {
   const [month, setMonth] = useState(""); // "" = all, else month index as string
   const [price, setPrice] = useState(""); // "", "free", "paid"
   const [status, setStatus] = useState<"active" | "expired">("active");
+  // Lets the user open the results list (all active events) by pressing
+  // Enter even with no query/filters set.
+  const [searchOpen, setSearchOpen] = useState(false);
 
   useEffect(() => {
     fetchEvents()
@@ -61,6 +66,7 @@ export default function Eventkalender() {
   // Search mode is on as soon as the user narrows anything (status counts:
   // switching to "expired" is an explicit search intent).
   const searchActive =
+    searchOpen ||
     query.trim() !== "" ||
     category !== "" ||
     place !== "" ||
@@ -103,6 +109,7 @@ export default function Eventkalender() {
     setMonth("");
     setPrice("");
     setStatus("active");
+    setSearchOpen(false);
   }
 
   const selectClass =
@@ -127,6 +134,13 @@ export default function Eventkalender() {
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={(e) => {
+              // Enter opens the results list (all active events when empty).
+              if (e.key === "Enter") {
+                e.preventDefault();
+                setSearchOpen(true);
+              }
+            }}
             placeholder="Event suchen…"
             aria-label="Event suchen"
             className="flex-1 min-w-48 border border-gray-300 rounded px-3 py-2 text-sm"
@@ -235,6 +249,10 @@ export default function Eventkalender() {
                   event={e}
                   now={now}
                   onClick={setSelected}
+                  isFavorite={favorites.isFavorite(e.id)}
+                  onToggleFavorite={
+                    favorites.enabled ? () => favorites.toggle(e.id) : undefined
+                  }
                 />
               ))}
             </div>

@@ -5,9 +5,10 @@
 // the X button, a backdrop click, or Escape.
 
 import { useEffect } from "react";
-import { X } from "lucide-react";
+import { Heart, X } from "lucide-react";
 import type { EventDTO } from "../../../shared/types";
 import { formatEventDate } from "@/lib/events";
+import { useFavorites } from "@/auth/FavoritesContext";
 
 interface EventDialogProps {
   /** The event to show, or null when closed. */
@@ -16,6 +17,8 @@ interface EventDialogProps {
 }
 
 export default function EventDialog({ event, onClose }: EventDialogProps) {
+  const favorites = useFavorites();
+
   // Close on Escape while open.
   useEffect(() => {
     if (!event) return;
@@ -57,6 +60,25 @@ export default function EventDialog({ event, onClose }: EventDialogProps) {
             <h2 id="event-dialog-title" className="text-2xl font-bold mb-3">
               {event.title}
             </h2>
+
+            {favorites.enabled && (
+              <button
+                type="button"
+                onClick={() => favorites.toggle(event.id)}
+                aria-pressed={favorites.isFavorite(event.id)}
+                className="inline-flex items-center gap-2 mb-4 px-3 py-1.5 rounded-full border border-gray-300 text-sm font-medium hover:bg-gray-50 cursor-pointer"
+              >
+                <Heart
+                  className={`h-4 w-4 ${
+                    favorites.isFavorite(event.id)
+                      ? "fill-asta-red text-asta-red"
+                      : "text-gray-600"
+                  }`}
+                />
+                {favorites.isFavorite(event.id) ? "Gemerkt" : "Merken"}
+              </button>
+            )}
+
             <p className="text-gray-700 whitespace-pre-line mb-4">
               {event.description}
             </p>

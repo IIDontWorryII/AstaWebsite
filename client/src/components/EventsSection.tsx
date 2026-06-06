@@ -9,12 +9,14 @@ import { Link } from "react-router-dom";
 import type { EventDTO, ProtocolDTO } from "../../../shared/types";
 import { fetchEvents, fetchProtocols } from "@/lib/api";
 import { selectUpcoming } from "@/lib/events";
+import { useFavorites } from "@/auth/FavoritesContext";
 import EventCard from "@/components/EventCard";
 
 export default function EventsSection() {
   const [events, setEvents] = useState<EventDTO[]>([]);
   const [protocols, setProtocols] = useState<ProtocolDTO[]>([]);
   const [now, setNow] = useState(() => Date.now());
+  const favorites = useFavorites();
 
   useEffect(() => {
     // Both lists are best-effort — failures shouldn't blank the homepage.
@@ -62,7 +64,17 @@ export default function EventsSection() {
               <p className="text-gray-500">Zur Zeit sind keine Events geplant.</p>
             ) : (
               upcoming.map((event) => (
-                <EventCard key={event.id} event={event} now={now} />
+                <EventCard
+                  key={event.id}
+                  event={event}
+                  now={now}
+                  isFavorite={favorites.isFavorite(event.id)}
+                  onToggleFavorite={
+                    favorites.enabled
+                      ? () => favorites.toggle(event.id)
+                      : undefined
+                  }
+                />
               ))
             )}
           </div>

@@ -3,9 +3,10 @@
 // Presentational event card shared by the Home "upcoming events" block, the
 // Sport page, and the calendar search results — so they all look identical.
 // Shows the poster, title, date and a countdown badge (or "Vorbei" once the
-// event is in the past). Pass `onClick` to make it an interactive button
-// (e.g. to open the event popup); omit it for a static card.
+// event is in the past). Pass `onClick` to make the card open something
+// (e.g. the popup). Pass `onToggleFavorite` to show a heart toggle overlay.
 
+import { Heart } from "lucide-react";
 import type { EventDTO } from "../../../shared/types";
 import { formatCountdown, formatEventDate } from "@/lib/events";
 
@@ -13,14 +14,20 @@ interface EventCardProps {
   event: EventDTO;
   /** Current time in ms; pass a ticking value to keep the countdown live. */
   now?: number;
-  /** When provided, the card becomes a button calling this on click. */
+  /** When provided, clicking the card calls this. */
   onClick?: (event: EventDTO) => void;
+  /** Whether this event is currently favorited (controls the heart fill). */
+  isFavorite?: boolean;
+  /** When provided, a heart toggle is rendered over the poster. */
+  onToggleFavorite?: (event: EventDTO) => void;
 }
 
 export default function EventCard({
   event,
   now = Date.now(),
   onClick,
+  isFavorite = false,
+  onToggleFavorite,
 }: EventCardProps) {
   const ms = new Date(event.startsAt).getTime() - now;
   const expired = ms <= 0;
@@ -61,12 +68,37 @@ export default function EventCard({
     </>
   );
 
-  if (onClick) {
-    return (
-      <button type="button" onClick={() => onClick(event)} className={base + interactive}>
-        {inner}
+  const card = onClick ? (
+    <button type="button" onClick={() => onClick(event)} className={base + interactive}>
+      {inner}
+    </button>
+  ) : (
+    <article className={base}>{inner}</article>
+  );
+
+  // No favorite toggle → return the card directly (keeps the DOM minimal).
+  if (!onToggleFavorite) return card;
+
+  // With a favorite toggle, wrap so the heart can sit over the poster as a
+  // sibling button (avoids invalid nested <button>s).
+  return (
+    <div className="relative">
+      {card}
+      <button
+        type="button"
+        onClick={() => onToggleFavorite(event)}
+        aria-label={
+          isFavorite ? "Aus Merkliste entfernen" : "Zur Merkliste hinzufügen"
+        }
+        aria-pressed={isFavorite}
+        className="absolute top-2 right-2 z-10 p-1.5 rounded-full bg-white/90 hover:bg-white shadow cursor-pointer"
+      >
+        <Heart
+          className={`h-5 w-5 ${
+            isFavorite ? "fill-asta-red text-asta-red" : "text-gray-600"
+          }`}
+        />
       </button>
-    );
-  }
-  return <article className={base}>{inner}</article>;
+    </div>
+  );
 }

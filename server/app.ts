@@ -539,6 +539,63 @@ app.post(
   },
 );
 
+// ─── Event favorites (Merkliste, auth only) ────────────────────────────
+
+// List the current user's favorited events (most recently added first).
+app.get(
+  "/api/me/favorites",
+  requireAuth,
+  async (req: Request, res: Response<EventDTO[] | { error: string }>) => {
+    const { id } = req.user!;
+    const favs = await prisma.favorite.findMany({
+      where: { userId: id },
+      include: { event: true },
+      orderBy: { createdAt: "desc" },
+    });
+    return res.json(favs.map((f) => toEventDTO(f.event)));
+  },
+);
+
+// Add a favorite. Idempotent: re-favoriting an event is a no-op.
+app.post(
+  "/api/me/favorites/:eventId",
+  requireAuth,
+  async (
+    req: Request<{ eventId: string }>,
+    res: Response<{ ok: true } | { error: string }>,
+  ) => {
+    const { id } = req.user!;
+    const { eventId } = req.params;
+
+    const event = await prisma.event.findUnique({ where: { id: eventId } });
+    if (!event) {
+      return res.status(404).json({ error: "Event not found" });
+    }
+
+    await prisma.favorite.upsert({
+      where: { userId_eventId: { userId: id, eventId } },
+      update: {},
+      create: { userId: id, eventId },
+    });
+    return res.status(201).json({ ok: true });
+  },
+);
+
+// Remove a favorite. Idempotent: removing a non-favorite returns 204 too.
+app.delete(
+  "/api/me/favorites/:eventId",
+  requireAuth,
+  async (
+    req: Request<{ eventId: string }>,
+    res: Response<{ error: string } | undefined>,
+  ) => {
+    const { id } = req.user!;
+    const { eventId } = req.params;
+    await prisma.favorite.deleteMany({ where: { userId: id, eventId } });
+    return res.status(204).send();
+  },
+);
+
 // ─── Gremium pages (read) ──────────────────────────────────────────────
 
 // Public: fetch a single Gremium page with all its sections, ordered.

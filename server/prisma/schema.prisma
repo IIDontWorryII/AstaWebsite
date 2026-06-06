@@ -19,19 +19,20 @@ datasource db {
 }
 
 model User {
-  id           String    @id @default(uuid())
-  email        String    @unique
+  id           String     @id @default(uuid())
+  email        String     @unique
   passwordHash String
   displayName  String
-  role         String    @default("USER")
+  role         String     @default("USER")
   avatarUrl    String?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
   lastLoginAt  DateTime?
+  favorites    Favorite[]
 }
 
 model Event {
-  id          String   @id @default(uuid())
+  id          String     @id @default(uuid())
   title       String
   description String
   imageUrl    String?
@@ -43,8 +44,22 @@ model Event {
   // new referate don't require a migration. Nullable for legacy rows.
   category    String?
   startsAt    DateTime
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt()
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt()
+  favorites   Favorite[]
+}
+
+// A user's bookmarked event ("Merkliste"). One row per (user, event) pair.
+// Cascades on delete so removing a user or event cleans up its favorites.
+model Favorite {
+  id        String   @id @default(uuid())
+  userId    String
+  eventId   String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, eventId])
 }
 
 model Page {

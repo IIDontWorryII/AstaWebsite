@@ -6,12 +6,18 @@
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
+import type { EventDTO } from "../../../shared/types";
 import { useAuth } from "@/auth/AuthContext";
+import { useFavorites } from "@/auth/FavoritesContext";
 import { Button } from "@/components/ui/button";
+import EventCard from "@/components/EventCard";
+import EventDialog from "@/components/EventDialog";
 
 export default function Profile() {
   const { user, loading, logout, updateProfile, changePassword } = useAuth();
+  const favorites = useFavorites();
   const navigate = useNavigate();
+  const [selectedEvent, setSelectedEvent] = useState<EventDTO | null>(null);
 
   // Edit-form state. Initialized from the user once it's available.
   const [name, setName] = useState("");
@@ -282,12 +288,27 @@ export default function Profile() {
         </Button>
       </form>
 
-      {/* Placeholder for the future ticket system. */}
+      {/* Favorited events ("Merkliste"). */}
       <section className="mt-12 border-t pt-8">
-        <h2 className="text-xl font-semibold mb-2">Meine Tickets</h2>
-        <p className="text-gray-500">
-          Hier erscheinen später deine gekauften Event-Tickets.
-        </p>
+        <h2 className="text-xl font-semibold mb-4">Meine Events</h2>
+        {favorites.events.length === 0 ? (
+          <p className="text-gray-500">
+            Du hast noch keine Events gemerkt. Tippe auf das Herz bei einem
+            Event, um es hier zu speichern.
+          </p>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+            {favorites.events.map((e) => (
+              <EventCard
+                key={e.id}
+                event={e}
+                onClick={setSelectedEvent}
+                isFavorite={favorites.isFavorite(e.id)}
+                onToggleFavorite={() => favorites.toggle(e.id)}
+              />
+            ))}
+          </div>
+        )}
       </section>
 
       {/* Logout at the bottom. */}
@@ -300,6 +321,11 @@ export default function Profile() {
           Logout
         </Button>
       </div>
+
+      <EventDialog
+        event={selectedEvent}
+        onClose={() => setSelectedEvent(null)}
+      />
     </section>
   );
 }

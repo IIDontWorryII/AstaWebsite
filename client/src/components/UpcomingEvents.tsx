@@ -11,6 +11,7 @@ import { useEffect, useState } from "react";
 import type { EventDTO } from "../../../shared/types";
 import { fetchEvents } from "@/lib/api";
 import { selectUpcoming } from "@/lib/events";
+import { useFavorites } from "@/auth/FavoritesContext";
 import EventCard from "@/components/EventCard";
 
 interface UpcomingEventsProps {
@@ -32,6 +33,7 @@ export default function UpcomingEvents({
 }: UpcomingEventsProps) {
   const [events, setEvents] = useState<EventDTO[]>([]);
   const [now, setNow] = useState(() => Date.now());
+  const favorites = useFavorites();
 
   useEffect(() => {
     fetchEvents()
@@ -56,7 +58,16 @@ export default function UpcomingEvents({
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {upcoming.map((e) => (
-            <EventCard key={e.id} event={e} now={now} onClick={onSelect} />
+            <EventCard
+              key={e.id}
+              event={e}
+              now={now}
+              onClick={onSelect}
+              isFavorite={favorites.isFavorite(e.id)}
+              onToggleFavorite={
+                favorites.enabled ? () => favorites.toggle(e.id) : undefined
+              }
+            />
           ))}
         </div>
       )}
