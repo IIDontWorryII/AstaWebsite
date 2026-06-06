@@ -9,6 +9,7 @@ import { Navigate, useNavigate } from "react-router-dom";
 import type { EventDTO } from "../../../shared/types";
 import { useAuth } from "@/auth/AuthContext";
 import { useFavorites } from "@/auth/FavoritesContext";
+import { downloadICS, eventsToICS } from "@/lib/calendar";
 import { Button } from "@/components/ui/button";
 import EventCard from "@/components/EventCard";
 import EventDialog from "@/components/EventDialog";
@@ -290,7 +291,20 @@ export default function Profile() {
 
       {/* Favorited events ("Merkliste"). */}
       <section className="mt-12 border-t pt-8">
-        <h2 className="text-xl font-semibold mb-4">Meine Events</h2>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-semibold">Meine Events</h2>
+          {favorites.events.length > 0 && (
+            <button
+              type="button"
+              onClick={() =>
+                downloadICS("meine-events.ics", eventsToICS(favorites.events))
+              }
+              className="text-sm font-medium text-asta-red hover:underline cursor-pointer"
+            >
+              Alle als .ics exportieren
+            </button>
+          )}
+        </div>
         {favorites.events.length === 0 ? (
           <p className="text-gray-500">
             Du hast noch keine Events gemerkt. Tippe auf das Herz bei einem

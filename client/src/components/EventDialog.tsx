@@ -9,6 +9,12 @@ import { Heart, X } from "lucide-react";
 import type { EventDTO } from "../../../shared/types";
 import { formatEventDate } from "@/lib/events";
 import { useFavorites } from "@/auth/FavoritesContext";
+import {
+  downloadICS,
+  eventToICS,
+  googleCalendarUrl,
+  icsFilename,
+} from "@/lib/calendar";
 
 interface EventDialogProps {
   /** The event to show, or null when closed. */
@@ -96,6 +102,25 @@ export default function EventDialog({ event, onClose }: EventDialogProps) {
                 <dd className="inline">{event.price?.trim() || "Frei"}</dd>
               </div>
             </dl>
+
+            {/* Add to calendar. */}
+            <div className="flex flex-wrap gap-2 mt-4">
+              <button
+                type="button"
+                onClick={() => downloadICS(icsFilename(event), eventToICS(event))}
+                className="px-3 py-1.5 rounded-full border border-gray-300 text-sm font-medium hover:bg-gray-50 cursor-pointer"
+              >
+                📅 Zum Kalender (.ics)
+              </button>
+              <a
+                href={googleCalendarUrl(event)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-3 py-1.5 rounded-full border border-gray-300 text-sm font-medium hover:bg-gray-50"
+              >
+                Google Kalender
+              </a>
+            </div>
           </div>
 
           {/* Right: poster */}

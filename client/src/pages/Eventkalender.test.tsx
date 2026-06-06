@@ -101,5 +101,12 @@ describe("Eventkalender", () => {
     expect(within(dialog).getByText("Kalender Event")).toBeInTheDocument();
     expect(within(dialog).getByText("Campus")).toBeInTheDocument();
     expect(within(dialog).getByText("5€")).toBeInTheDocument();
+    // Add-to-calendar options are present.
+    expect(
+      within(dialog).getByRole("button", { name: /Zum Kalender/ }),
+    ).toBeInTheDocument();
+    expect(
+      within(dialog).getByRole("link", { name: "Google Kalender" }),
+    ).toBeInTheDocument();
   });
 });
