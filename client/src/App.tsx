@@ -6,6 +6,7 @@ import Eventkalender from "./pages/Eventkalender";
 import Baracke from "./pages/Baracke";
 import Sport from "./pages/Sport";
 import Kontakt from "./pages/Kontakt";
+import Barrierefreiheit from "./pages/Barrierefreiheit";
 import NotFound from "./pages/NotFound";
 import Asta from "./pages/gremien/Asta";
 import Stupa from "./pages/gremien/Stupa";
@@ -38,6 +39,7 @@ function App() {
         <Route path="/baracke" element={<Baracke />} />
         <Route path="/sport" element={<Sport />} />
         <Route path="/kontakt" element={<Kontakt />} />
+        <Route path="/barrierefreiheit" element={<Barrierefreiheit />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/profile" element={<Profile />} />

@@ -109,6 +109,16 @@ export default function Footer() {
           </div>
         </div>
       </div>
+
+      {/* Legal bar — required links, present on every page. Impressum &
+          Datenschutz are added in AW-56 / AW-57. */}
+      <div className="relative z-10 border-t border-white/20">
+        <div className="max-w-7xl mx-auto px-6 py-4 flex flex-wrap gap-x-6 gap-y-2 text-sm">
+          <Link to="/barrierefreiheit" className="hover:underline">
+            Barrierefreiheit
+          </Link>
+        </div>
+      </div>
     </footer>
   );
 }
