@@ -1,0 +1,95 @@
+name: CI
+
+# Runs on every push to main and on every pull request. Mirrors the Render
+# build (Node 24, same build commands) so type/build errors and failing
+# tests are caught here BEFORE they reach production.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Cancel an in-progress run if a new commit is pushed to the same ref.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  client:
+    name: Client (build + tests)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: client/package-lock.json
+      - name: Install
+        working-directory: client
+        run: npm ci
+      # `npm run build` = `tsc -b && vite build` — the exact command Render
+      # runs, and the one that catches the test-file type errors that only
+      # showed up on deploy before.
+      - name: Build (typecheck + bundle)
+        working-directory: client
+        run: npm run build
+      - name: Test
+        working-directory: client
+        run: npm run test:run
+
+  server:
+    name: Server (build + tests)
+    runs-on: ubuntu-latest
+
+    # Throwaway Postgres for the test run. The server tests hit a real DB,
+    # so we migrate + seed it first.
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: astawebsite_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      # Local Postgres service — pooled and direct point at the same DB.
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/astawebsite_test
+      DIRECT_URL: postgresql://postgres:postgres@localhost:5432/astawebsite_test
+      # Dummy secret — tests sign and verify tokens in-process with it.
+      JWT_SECRET: ci-test-secret
+      # R2 vars are injected as dummies by server/test/setup.ts, so they
+      # aren't needed here.
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+      - name: Install
+        working-directory: server
+        run: npm ci
+      - name: Generate Prisma client
+        working-directory: server
+        run: npx prisma generate
+      - name: Apply migrations
+        working-directory: server
+        run: npx prisma migrate deploy
+      - name: Seed database
+        working-directory: server
+        run: npx prisma db seed
+      - name: Typecheck
+        working-directory: server
+        run: npm run typecheck
+      - name: Test
+        working-directory: server
+        run: npm run test:run
