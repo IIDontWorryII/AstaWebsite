@@ -143,4 +143,12 @@
        shown) and a short one (no scrollbar). */
     scrollbar-gutter: stable;
   }
+  /* Consistent, visible keyboard-focus ring across all interactive elements
+       (links, buttons, inputs). Only shows for keyboard navigation
+       (:focus-visible), not on mouse click. */
+  :focus-visible {
+    outline: 2px solid var(--color-asta-red);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
 }

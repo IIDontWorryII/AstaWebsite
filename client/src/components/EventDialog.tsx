@@ -4,7 +4,7 @@
 // description, when/where/price. Right column: the full poster. Closes on
 // the X button, a backdrop click, or Escape.
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { Heart, X } from "lucide-react";
 import type { EventDTO } from "../../../shared/types";
 import { formatEventDate } from "@/lib/events";
@@ -24,15 +24,26 @@ interface EventDialogProps {
 
 export default function EventDialog({ event, onClose }: EventDialogProps) {
   const favorites = useFavorites();
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const previouslyFocused = useRef<HTMLElement | null>(null);
 
-  // Close on Escape while open.
+  // While open: close on Escape, move focus into the dialog, and restore
+  // focus to the trigger element when it closes (a11y — AW-28).
   useEffect(() => {
     if (!event) return;
+    previouslyFocused.current = document.activeElement as HTMLElement | null;
+    const raf = requestAnimationFrame(() => closeButtonRef.current?.focus());
+
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
     };
     document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
+
+    return () => {
+      cancelAnimationFrame(raf);
+      document.removeEventListener("keydown", onKey);
+      previouslyFocused.current?.focus?.();
+    };
   }, [event, onClose]);
 
   if (!event) return null;
@@ -53,6 +64,7 @@ export default function EventDialog({ event, onClose }: EventDialogProps) {
       >
         <button
           type="button"
+          ref={closeButtonRef}
           onClick={onClose}
           aria-label="Schließen"
           className="absolute top-3 right-3 p-2 rounded-full bg-white/80 hover:bg-gray-100 cursor-pointer"
