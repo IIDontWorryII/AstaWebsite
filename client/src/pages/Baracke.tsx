@@ -2,35 +2,25 @@
 //
 // Public BaRACke page. Content (info, opening hours, drinks menu, gallery)
 // comes from the page-CMS under the "baracke" slug, so editors manage it
-// via /admin/gremien/baracke. Upcoming events are pulled live from the
-// Events API and filtered to those held at the BaRACke.
+// via /admin/gremien/baracke. Upcoming events use the shared
+// <UpcomingEvents> component, filtered to the BaRACke category.
 
 import { useEffect, useState } from "react";
-import type { EventDTO, PageDTO } from "../../../shared/types";
+import type { PageDTO } from "../../../shared/types";
 import { fetchPage } from "@/lib/pages";
-import { fetchEvents } from "@/lib/api";
 import InfoSection from "@/components/gremien/InfoSection";
 import MenuCard from "@/components/gremien/MenuCard";
 import GalleryCard from "@/components/gremien/GalleryCard";
-
-/** Matches event venues like "BaRACke", "Baracke Remagen", etc. */
-function isBarackeEvent(place: string): boolean {
-  return /bar.?cke/i.test(place);
-}
+import UpcomingEvents from "@/components/UpcomingEvents";
 
 export default function Baracke() {
   const [page, setPage] = useState<PageDTO | null>(null);
-  const [events, setEvents] = useState<EventDTO[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchPage("baracke")
       .then(setPage)
       .catch((e) => setError(e instanceof Error ? e.message : "Fehler"));
-    // Events are a nice-to-have; ignore failures so they don't blank the page.
-    fetchEvents()
-      .then(setEvents)
-      .catch(() => setEvents([]));
   }, []);
 
   if (error) {
@@ -52,12 +42,6 @@ export default function Baracke() {
   const hours = page.sections.find((s) => s.kind === "FREEFORM");
   const menu = page.sections.filter((s) => s.kind === "MENU");
   const gallery = page.sections.filter((s) => s.kind === "GALLERY");
-
-  const now = Date.now();
-  const upcoming = events
-    .filter((e) => isBarackeEvent(e.place) && new Date(e.startsAt).getTime() >= now)
-    .sort((a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime())
-    .slice(0, 3);
 
   return (
     <div>
@@ -121,41 +105,8 @@ export default function Baracke() {
           </section>
         )}
 
-        {/* Upcoming events held at the BaRACke (live from the Events API). */}
-        {upcoming.length > 0 && (
-          <section id="events" className="scroll-mt-20">
-            <h2 className="text-2xl font-bold mb-6">Events in der BaRACke</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {upcoming.map((e) => (
-                <article
-                  key={e.id}
-                  className="border border-gray-200 rounded-2xl overflow-hidden flex flex-col"
-                >
-                  {e.imageUrl && (
-                    <img
-                      src={e.imageUrl}
-                      alt={e.title}
-                      className="aspect-[4/3] w-full object-cover"
-                    />
-                  )}
-                  <div className="p-4">
-                    <h3 className="font-semibold">{e.title}</h3>
-                    <p className="text-sm text-gray-600 mt-1">
-                      {new Date(e.startsAt).toLocaleDateString("de-DE", {
-                        day: "2-digit",
-                        month: "2-digit",
-                        year: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}{" "}
-                      Uhr
-                    </p>
-                  </div>
-                </article>
-              ))}
-            </div>
-          </section>
-        )}
+        {/* Upcoming BaRACke events (live, clickable, with countdown). */}
+        <UpcomingEvents category="BARACKE" title="Events in der BaRACke" />
       </div>
     </div>
   );

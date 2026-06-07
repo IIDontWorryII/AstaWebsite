@@ -11,11 +11,13 @@ import { fetchEvents, fetchProtocols } from "@/lib/api";
 import { selectUpcoming } from "@/lib/events";
 import { useFavorites } from "@/auth/FavoritesContext";
 import EventCard from "@/components/EventCard";
+import EventDialog from "@/components/EventDialog";
 
 export default function EventsSection() {
   const [events, setEvents] = useState<EventDTO[]>([]);
   const [protocols, setProtocols] = useState<ProtocolDTO[]>([]);
   const [now, setNow] = useState(() => Date.now());
+  const [selected, setSelected] = useState<EventDTO | null>(null);
   const favorites = useFavorites();
 
   useEffect(() => {
@@ -68,6 +70,7 @@ export default function EventsSection() {
                   key={event.id}
                   event={event}
                   now={now}
+                  onClick={setSelected}
                   isFavorite={favorites.isFavorite(event.id)}
                   onToggleFavorite={
                     favorites.enabled
@@ -111,6 +114,8 @@ export default function EventsSection() {
           </aside>
         </div>
       </div>
+
+      <EventDialog event={selected} onClose={() => setSelected(null)} />
     </section>
   );
 }

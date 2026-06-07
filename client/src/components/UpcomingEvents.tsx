@@ -2,10 +2,11 @@
 //
 // Reusable "next N events" section with a live countdown. Fetches events
 // from the API, optionally filters to one category/referat, keeps the
-// soonest `limit` future events, and renders them as EventCards.
+// soonest `limit` future events, and renders them as EventCards. Clicking a
+// card opens the event popup; the heart toggles the favorite.
 //
-// Used on the Sport page (category="SPORT") and reusable on BaRACke, Home,
-// etc. — pass a different category or omit it to show all events.
+// Used on the Sport and BaRACke pages (and reusable elsewhere) — self
+// contained, so a page just drops in <UpcomingEvents category="…" />.
 
 import { useEffect, useState } from "react";
 import type { EventDTO } from "../../../shared/types";
@@ -13,6 +14,7 @@ import { fetchEvents } from "@/lib/api";
 import { selectUpcoming } from "@/lib/events";
 import { useFavorites } from "@/auth/FavoritesContext";
 import EventCard from "@/components/EventCard";
+import EventDialog from "@/components/EventDialog";
 
 interface UpcomingEventsProps {
   /** Filter to this category (EVENT_CATEGORIES value). Omit = all events. */
@@ -21,18 +23,16 @@ interface UpcomingEventsProps {
   limit?: number;
   /** Section heading. Default "Bevorstehende Events". */
   title?: string;
-  /** Optional click handler (e.g. to open the event popup). */
-  onSelect?: (event: EventDTO) => void;
 }
 
 export default function UpcomingEvents({
   category,
   limit = 3,
   title = "Bevorstehende Events",
-  onSelect,
 }: UpcomingEventsProps) {
   const [events, setEvents] = useState<EventDTO[]>([]);
   const [now, setNow] = useState(() => Date.now());
+  const [selected, setSelected] = useState<EventDTO | null>(null);
   const favorites = useFavorites();
 
   useEffect(() => {
@@ -62,7 +62,7 @@ export default function UpcomingEvents({
               key={e.id}
               event={e}
               now={now}
-              onClick={onSelect}
+              onClick={setSelected}
               isFavorite={favorites.isFavorite(e.id)}
               onToggleFavorite={
                 favorites.enabled ? () => favorites.toggle(e.id) : undefined
@@ -71,6 +71,8 @@ export default function UpcomingEvents({
           ))}
         </div>
       )}
+
+      <EventDialog event={selected} onClose={() => setSelected(null)} />
     </section>
   );
 }
