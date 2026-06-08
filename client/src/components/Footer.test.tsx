@@ -6,13 +6,18 @@ import { MemoryRouter } from "react-router-dom";
 import Footer from "./Footer";
 
 describe("Footer", () => {
-  it("links to the Barrierefreiheitserklärung", () => {
+  it("links to the legal pages", () => {
     render(
       <MemoryRouter>
         <Footer />
       </MemoryRouter>,
     );
-    const link = screen.getByRole("link", { name: "Barrierefreiheit" });
-    expect(link).toHaveAttribute("href", "/barrierefreiheit");
+    expect(
+      screen.getByRole("link", { name: "Barrierefreiheit" }),
+    ).toHaveAttribute("href", "/barrierefreiheit");
+    expect(screen.getByRole("link", { name: "Impressum" })).toHaveAttribute(
+      "href",
+      "/impressum",
+    );
   });
 });

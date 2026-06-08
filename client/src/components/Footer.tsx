@@ -114,6 +114,9 @@ export default function Footer() {
           Datenschutz are added in AW-56 / AW-57. */}
       <div className="relative z-10 border-t border-white/20">
         <div className="max-w-7xl mx-auto px-6 py-4 flex flex-wrap gap-x-6 gap-y-2 text-sm">
+          <Link to="/impressum" className="hover:underline">
+            Impressum
+          </Link>
           <Link to="/barrierefreiheit" className="hover:underline">
             Barrierefreiheit
           </Link>
