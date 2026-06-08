@@ -70,6 +70,9 @@ export async function uploadObject(
       Key: key,
       Body: body,
       ContentType: contentType,
+      // Keys are content-unique (UUID filenames), so an object never changes
+      // once written — cache it for a year so repeat visitors don't re-download.
+      CacheControl: "public, max-age=31536000, immutable",
     }),
   );
 }

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 
 export default function Hero() {
   return (
-    <section className="bg-[url(/hero-campus.png)] bg-size[100%_blank] bg-no-repeat bg-right rounded-br-[6rem]">
+    <section className="bg-[url(/hero-campus.webp)] bg-no-repeat bg-right rounded-br-[6rem]">
       <div className="max-w-7xl mx-auto px-6 py-14 md:py-20">
         <h1 className="text-5xl md:text-6xl font-bold leading-tight">
           <span className="block">AStA Remagen</span>
