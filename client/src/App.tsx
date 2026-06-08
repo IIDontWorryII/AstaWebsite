@@ -8,6 +8,7 @@ import Sport from "./pages/Sport";
 import Kontakt from "./pages/Kontakt";
 import Barrierefreiheit from "./pages/Barrierefreiheit";
 import Impressum from "./pages/Impressum";
+import Datenschutz from "./pages/Datenschutz";
 import NotFound from "./pages/NotFound";
 import Asta from "./pages/gremien/Asta";
 import Stupa from "./pages/gremien/Stupa";
@@ -42,6 +43,7 @@ function App() {
         <Route path="/kontakt" element={<Kontakt />} />
         <Route path="/barrierefreiheit" element={<Barrierefreiheit />} />
         <Route path="/impressum" element={<Impressum />} />
+        <Route path="/datenschutz" element={<Datenschutz />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/profile" element={<Profile />} />

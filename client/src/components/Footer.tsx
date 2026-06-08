@@ -117,6 +117,9 @@ export default function Footer() {
           <Link to="/impressum" className="hover:underline">
             Impressum
           </Link>
+          <Link to="/datenschutz" className="hover:underline">
+            Datenschutz
+          </Link>
           <Link to="/barrierefreiheit" className="hover:underline">
             Barrierefreiheit
           </Link>

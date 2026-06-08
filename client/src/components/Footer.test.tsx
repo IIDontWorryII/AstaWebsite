@@ -19,5 +19,9 @@ describe("Footer", () => {
       "href",
       "/impressum",
     );
+    expect(screen.getByRole("link", { name: "Datenschutz" })).toHaveAttribute(
+      "href",
+      "/datenschutz",
+    );
   });
 });
