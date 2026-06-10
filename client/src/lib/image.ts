@@ -1,27 +1,25 @@
 // client/src/lib/image.ts
 //
-// Client-side image downscaling/compression run BEFORE upload. Phone photos
-// are often 4000+ px wide and several megabytes; uploading them raw means
-// the bytes travel the wire twice (browser → server → R2) at full size,
-// which is the main reason uploads felt slow (15–25s).
+// Client-side image downscaling/compression run BEFORE upload. Camera and
+// phone photos are often several megabytes at 4000–7000 px wide; uploading
+// them raw makes uploads slow AND makes every visitor download a huge file.
+// We shrink + re-encode to WebP so stored images are ~100–300 KB.
 //
-// We keep the compression GENTLE on purpose — quality matters more than
-// squeezing the last kilobyte:
-//   - only shrink when the longest edge exceeds MAX_DIMENSION
-//   - re-encode JPEGs at high quality (0.85)
-//   - leave PNGs as PNGs (preserves transparency for logos etc.)
-//   - if the result isn't actually smaller, keep the original untouched
+//   - cap the longest edge at MAX_DIMENSION
+//   - re-encode to WebP (smaller than JPEG at equal quality); fall back to
+//     JPEG if the browser can't encode WebP
+//   - preserve EXIF orientation (so portrait photos aren't rotated)
+//   - if the result isn't actually smaller, keep the original
 //
-// Anything that goes wrong (unsupported type, canvas unavailable, decode
-// error) falls back to returning the original file — compression must never
-// block an upload.
+// Any failure (unsupported type, no canvas, decode error) returns the
+// original file — compression must never block an upload.
 
-const MAX_DIMENSION = 2000; // longest edge, in pixels
-const JPEG_QUALITY = 0.85; // 0–1; high = better quality, larger file
+const MAX_DIMENSION = 1600; // longest edge, in pixels
+const QUALITY = 0.82; // 0–1
 
 /**
- * Return a (usually) smaller version of `file` suitable for upload. On any
- * failure or when compression wouldn't help, returns the original file.
+ * Return a (usually) much smaller version of `file` suitable for upload. On
+ * any failure or when compression wouldn't help, returns the original.
  */
 export async function compressImage(file: File): Promise<File> {
   // Only raster images we know how to re-encode. SVG/PDF/etc. pass through.
@@ -42,23 +40,22 @@ export async function compressImage(file: File): Promise<File> {
     const ctx = canvas.getContext("2d");
     if (!ctx) return file;
     ctx.drawImage(bitmap, 0, 0, targetW, targetH);
-    // ImageBitmap holds GPU/CPU memory until closed; HTMLImageElement doesn't.
     if (typeof ImageBitmap !== "undefined" && bitmap instanceof ImageBitmap) {
       bitmap.close();
     }
 
-    // Keep PNG as PNG (transparency); re-encode everything else as JPEG.
-    const outType = file.type === "image/png" ? "image/png" : "image/jpeg";
-    const blob = await new Promise<Blob | null>((resolve) =>
-      canvas.toBlob(
-        resolve,
-        outType,
-        outType === "image/jpeg" ? JPEG_QUALITY : undefined,
-      ),
-    );
+    // Prefer WebP; fall back to JPEG if the browser didn't produce WebP.
+    let blob = await toBlob(canvas, "image/webp", QUALITY);
+    let outType = "image/webp";
+    let ext = ".webp";
+    if (!blob || blob.type !== "image/webp") {
+      blob = await toBlob(canvas, "image/jpeg", QUALITY);
+      outType = "image/jpeg";
+      ext = ".jpg";
+    }
+
     if (!blob || blob.size >= file.size) return file;
 
-    const ext = outType === "image/png" ? ".png" : ".jpg";
     const newName = file.name.replace(/\.\w+$/, "") + ext;
     return new File([blob], newName, { type: outType });
   } catch {
@@ -66,13 +63,23 @@ export async function compressImage(file: File): Promise<File> {
   }
 }
 
-/** Decode a File into something drawable on a canvas. */
+function toBlob(
+  canvas: HTMLCanvasElement,
+  type: string,
+  quality: number,
+): Promise<Blob | null> {
+  return new Promise((resolve) => canvas.toBlob(resolve, type, quality));
+}
+
+/** Decode a File into something drawable on a canvas (EXIF-oriented). */
 async function loadImage(
   file: File,
 ): Promise<ImageBitmap | HTMLImageElement> {
   if (typeof createImageBitmap === "function") {
-    return await createImageBitmap(file);
+    return await createImageBitmap(file, { imageOrientation: "from-image" });
   }
+  // Fallback: modern browsers already apply EXIF orientation when rendering
+  // an <img>, so drawing it to the canvas uses the corrected orientation.
   return await new Promise((resolve, reject) => {
     const img = new Image();
     const url = URL.createObjectURL(file);

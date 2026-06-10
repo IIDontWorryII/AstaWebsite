@@ -30,6 +30,12 @@ describe("EventCard", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("lazy-loads the poster image", () => {
+    render(<EventCard event={{ ...event, imageUrl: "/poster.jpg" }} />);
+    const img = screen.getByRole("img", { name: "Party" });
+    expect(img).toHaveAttribute("loading", "lazy");
+  });
+
   it("shows a heart reflecting isFavorite and toggles on click", async () => {
     const onToggle = vi.fn();
     render(<EventCard event={event} isFavorite onToggleFavorite={onToggle} />);

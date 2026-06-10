@@ -17,6 +17,8 @@ export default function MenuCard({ section }: MenuCardProps) {
         <img
           src={section.imageUrl}
           alt={section.caption ?? "Getränkekarte"}
+          loading="lazy"
+          decoding="async"
           className="w-full rounded-lg border border-gray-200 object-contain bg-white"
         />
       ) : (

@@ -16,6 +16,8 @@ export default function GalleryCard({ section }: GalleryCardProps) {
         <img
           src={section.imageUrl}
           alt={section.caption ?? "Foto"}
+          loading="lazy"
+          decoding="async"
           className="w-full aspect-square rounded-lg object-cover"
         />
       ) : (

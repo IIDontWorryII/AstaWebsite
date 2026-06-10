@@ -21,6 +21,8 @@ export default function MemberCard({ section }: MemberCardProps) {
         <img
           src={section.imageUrl}
           alt={section.caption ?? section.subtitle ?? "Mitglied"}
+          loading="lazy"
+          decoding="async"
           className="w-40 h-40 rounded-full object-cover"
         />
       )}

@@ -1,5 +1,9 @@
-import { Routes, Route } from "react-router-dom";
+import { lazy, Suspense } from "react";
+import { Routes, Route, Navigate } from "react-router-dom";
 import Layout from "./components/Layout";
+import RequireEditor from "./auth/RequireEditor";
+
+// Public pages — loaded eagerly (the common path).
 import Home from "./pages/Home";
 import Gremien from "./pages/Gremien";
 import Eventkalender from "./pages/Eventkalender";
@@ -13,20 +17,31 @@ import NotFound from "./pages/NotFound";
 import Asta from "./pages/gremien/Asta";
 import Stupa from "./pages/gremien/Stupa";
 import Fachschaften from "./pages/gremien/Fachschaften";
-import Login from "./pages/Login";
-import Signup from "./pages/Signup";
-import Profile from "./pages/Profile";
-import AdminDashboard from "./pages/admin/AdminDashboard";
-import AdminEvents from "./pages/admin/AdminEvents";
-import NewEvent from "./pages/admin/NewEvent";
-import EditEvent from "./pages/admin/EditEvent";
-import AdminProtocols from "./pages/admin/AdminProtocols";
-import NewProtocol from "./pages/admin/NewProtocol";
-import EditProtocol from "./pages/admin/EditProtocol";
-import AdminGremien from "./pages/admin/gremien/AdminGremien";
-import AdminGremiumPage from "./pages/admin/gremien/AdminGremiumPage";
-import RequireEditor from "./auth/RequireEditor";
-import { Navigate } from "react-router-dom";
+
+// Auth + admin pages — code-split (lazy). Anonymous visitors never download
+// these chunks; they load on demand when the route is visited.
+const Login = lazy(() => import("./pages/Login"));
+const Signup = lazy(() => import("./pages/Signup"));
+const Profile = lazy(() => import("./pages/Profile"));
+const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
+const AdminEvents = lazy(() => import("./pages/admin/AdminEvents"));
+const NewEvent = lazy(() => import("./pages/admin/NewEvent"));
+const EditEvent = lazy(() => import("./pages/admin/EditEvent"));
+const AdminProtocols = lazy(() => import("./pages/admin/AdminProtocols"));
+const NewProtocol = lazy(() => import("./pages/admin/NewProtocol"));
+const EditProtocol = lazy(() => import("./pages/admin/EditProtocol"));
+const AdminGremien = lazy(() => import("./pages/admin/gremien/AdminGremien"));
+const AdminGremiumPage = lazy(
+  () => import("./pages/admin/gremien/AdminGremiumPage"),
+);
+
+function PageFallback() {
+  return (
+    <div className="max-w-7xl mx-auto px-6 py-12">
+      <p className="text-gray-500">Lädt…</p>
+    </div>
+  );
+}
 
 function App() {
   return (
@@ -44,14 +59,39 @@ function App() {
         <Route path="/barrierefreiheit" element={<Barrierefreiheit />} />
         <Route path="/impressum" element={<Impressum />} />
         <Route path="/datenschutz" element={<Datenschutz />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/signup" element={<Signup />} />
-        <Route path="/profile" element={<Profile />} />
+
+        {/* Lazy routes share one Suspense fallback. */}
+        <Route
+          path="/login"
+          element={
+            <Suspense fallback={<PageFallback />}>
+              <Login />
+            </Suspense>
+          }
+        />
+        <Route
+          path="/signup"
+          element={
+            <Suspense fallback={<PageFallback />}>
+              <Signup />
+            </Suspense>
+          }
+        />
+        <Route
+          path="/profile"
+          element={
+            <Suspense fallback={<PageFallback />}>
+              <Profile />
+            </Suspense>
+          }
+        />
         <Route
           path="/admin"
           element={
             <RequireEditor>
-              <AdminDashboard />
+              <Suspense fallback={<PageFallback />}>
+                <AdminDashboard />
+              </Suspense>
             </RequireEditor>
           }
         />
@@ -59,7 +99,9 @@ function App() {
           path="/admin/events"
           element={
             <RequireEditor>
-              <AdminEvents />
+              <Suspense fallback={<PageFallback />}>
+                <AdminEvents />
+              </Suspense>
             </RequireEditor>
           }
         />
@@ -67,7 +109,9 @@ function App() {
           path="/admin/events/new"
           element={
             <RequireEditor>
-              <NewEvent />
+              <Suspense fallback={<PageFallback />}>
+                <NewEvent />
+              </Suspense>
             </RequireEditor>
           }
         />
@@ -75,7 +119,9 @@ function App() {
           path="/admin/events/:id/edit"
           element={
             <RequireEditor>
-              <EditEvent />
+              <Suspense fallback={<PageFallback />}>
+                <EditEvent />
+              </Suspense>
             </RequireEditor>
           }
         />
@@ -83,7 +129,9 @@ function App() {
           path="/admin/protocols"
           element={
             <RequireEditor>
-              <AdminProtocols />
+              <Suspense fallback={<PageFallback />}>
+                <AdminProtocols />
+              </Suspense>
             </RequireEditor>
           }
         />
@@ -91,7 +139,9 @@ function App() {
           path="/admin/protocols/new"
           element={
             <RequireEditor>
-              <NewProtocol />
+              <Suspense fallback={<PageFallback />}>
+                <NewProtocol />
+              </Suspense>
             </RequireEditor>
           }
         />
@@ -99,7 +149,9 @@ function App() {
           path="/admin/protocols/:id/edit"
           element={
             <RequireEditor>
-              <EditProtocol />
+              <Suspense fallback={<PageFallback />}>
+                <EditProtocol />
+              </Suspense>
             </RequireEditor>
           }
         />
@@ -107,7 +159,9 @@ function App() {
           path="/admin/gremien"
           element={
             <RequireEditor>
-              <AdminGremien />
+              <Suspense fallback={<PageFallback />}>
+                <AdminGremien />
+              </Suspense>
             </RequireEditor>
           }
         >

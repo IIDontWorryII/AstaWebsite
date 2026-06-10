@@ -44,6 +44,8 @@ export default function EventCard({
         <img
           src={event.imageUrl}
           alt={event.title}
+          loading="lazy"
+          decoding="async"
           className="aspect-[4/5] w-full object-cover"
         />
       ) : (

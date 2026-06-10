@@ -132,6 +132,8 @@ export default function EventCalendar({ events, onSelect }: EventCalendarProps) 
                       <img
                         src={e.imageUrl}
                         alt={e.title}
+                        loading="lazy"
+                        decoding="async"
                         className="w-full aspect-[4/5] object-cover rounded"
                       />
                     ) : (

@@ -23,6 +23,8 @@ export default function MitgliederSection({
         <img
           src={section.imageUrl}
           alt={section.subtitle ?? "Mitglieder"}
+          loading="lazy"
+          decoding="async"
           className="rounded-lg w-full mb-4"
         />
       )}
