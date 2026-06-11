@@ -116,5 +116,7 @@ export interface PageDTO {
   slug: string;
   title: string;
   intro: string | null;
+  /** Hero background image URL, or null to use the page's bundled default. */
+  heroImageUrl: string | null;
   sections: PageSectionDTO[];
 }

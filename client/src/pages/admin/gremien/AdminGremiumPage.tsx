@@ -42,6 +42,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import EditableSection from "./EditableSection";
 import SectionEditorDrawer from "./SectionEditorDrawer";
+import HeroImageEditor from "./HeroImageEditor";
 
 /** Pick the right renderer for a section based on its kind. */
 function renderSectionByKind(section: PageSectionDTO) {
@@ -240,6 +241,12 @@ export default function AdminGremiumPage() {
           bearbeiten.
         </p>
       </header>
+
+      <HeroImageEditor
+        slug={slug}
+        currentUrl={page.heroImageUrl}
+        onUpdated={setPage}
+      />
 
       <div className="space-y-6">
         {page.sections.map((section) => (

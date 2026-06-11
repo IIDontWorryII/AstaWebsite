@@ -62,7 +62,7 @@ describe("Eventkalender", () => {
     render(<Eventkalender />);
 
     expect(
-      screen.getByText("Entdecke kommende Veranstaltungen des AStA Remagen"),
+      screen.getByText(/Veranstaltungen des AStA Remagen/),
     ).toBeInTheDocument();
 
     // Weekday headers (calendar mode).

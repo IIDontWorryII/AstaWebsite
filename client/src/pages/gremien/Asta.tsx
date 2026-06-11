@@ -1,15 +1,15 @@
 // client/src/pages/gremien/Asta.tsx
 //
-// Public AStA page. All content (Info + Referate) is now fetched from the
-// API and rendered via the shared section components. Protocols come from
-// GremiumProtocols as before.
-//
-// The admin can edit each section via /admin/gremien/asta — that page
-// reuses the same section components.
+// Public AStA page: hero + alternating bands (Info, Referate, Protokolle).
+// Content is fetched from the API and rendered via the shared section
+// components; the admin edits the same sections via /admin/gremien/asta.
 
 import { useEffect, useState } from "react";
 import type { PageDTO } from "../../../../shared/types";
 import { fetchPage } from "@/lib/pages";
+import PageHero from "@/components/PageHero";
+import Band from "@/components/Band";
+import SectionHeader from "@/components/SectionHeader";
 import InfoSection from "@/components/gremien/InfoSection";
 import ReferatCard from "@/components/gremien/ReferatCard";
 import GremiumProtocols from "./GremiumProtocols";
@@ -39,31 +39,39 @@ export default function Asta() {
     );
   }
 
-  // Sections come back ordered. We split them by kind for layout purposes:
-  // the single INFO at the top, then all REFERATs in a list below.
   const info = page.sections.find((s) => s.kind === "INFO");
   const referate = page.sections.filter((s) => s.kind === "REFERAT");
 
   return (
-    <div className="max-w-7xl mx-auto px-6 py-12 space-y-16">
-      <h1 className="text-4xl font-bold">{page.title}</h1>
+    <div>
+      <PageHero
+        image={page.heroImageUrl ?? "/asta-hero.webp"}
+        logo="/asta-logo.png"
+        title="AStA"
+        subtitle="Allgemeiner Studierendenausschuss"
+      />
 
-      {info && <InfoSection section={info} altText="AStA-Team" />}
+      {info && (
+        <Band id="info">
+          <InfoSection section={info} title="Über den AStA" altText="AStA-Team" />
+        </Band>
+      )}
 
-      <section id="referate" className="scroll-mt-20">
-        <h2 className="text-3xl font-bold mb-2">ASTA-Referate</h2>
-        <p className="text-gray-600 mb-10">
-          Hier stellen sich alle Referate des AStA-Remagen vor und erklären ihre
-          jeweiligen Aufgaben:
-        </p>
-        <div className="space-y-12">
+      <Band id="referate" alt>
+        <SectionHeader
+          title="Referate"
+          subtitle="Hier stellen sich alle Referate des AStA Remagen vor und erklären ihre jeweiligen Aufgaben."
+        />
+        <div className="space-y-6">
           {referate.map((r) => (
             <ReferatCard key={r.id} section={r} />
           ))}
         </div>
-      </section>
+      </Band>
 
-      <GremiumProtocols gremium="ASTA" />
+      <Band id="protokolle">
+        <GremiumProtocols gremium="ASTA" />
+      </Band>
     </div>
   );
 }

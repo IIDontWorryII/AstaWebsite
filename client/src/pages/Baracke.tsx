@@ -1,13 +1,15 @@
 // client/src/pages/Baracke.tsx
 //
-// Public BaRACke page. Content (info, opening hours, drinks menu, gallery)
-// comes from the page-CMS under the "baracke" slug, so editors manage it
-// via /admin/gremien/baracke. Upcoming events use the shared
-// <UpcomingEvents> component, filtered to the BaRACke category.
+// Public BaRACke page: hero + alternating bands (info, opening hours, events,
+// drinks menu, gallery). Content comes from the page-CMS "baracke" slug.
 
 import { useEffect, useState } from "react";
+import { Clock } from "lucide-react";
 import type { PageDTO } from "../../../shared/types";
 import { fetchPage } from "@/lib/pages";
+import PageHero from "@/components/PageHero";
+import Band from "@/components/Band";
+import SectionHeader from "@/components/SectionHeader";
 import InfoSection from "@/components/gremien/InfoSection";
 import MenuCard from "@/components/gremien/MenuCard";
 import GalleryCard from "@/components/gremien/GalleryCard";
@@ -45,69 +47,56 @@ export default function Baracke() {
 
   return (
     <div>
-      {/* Hero: interior photo + dark overlay + logo + tagline. */}
-      <section className="relative h-72 md:h-96 overflow-hidden">
-        <img
-          src="/Baracke-photo1.jpg"
-          alt=""
-          aria-hidden="true"
-          className="absolute inset-0 w-full h-full object-cover"
-        />
-        <div className="absolute inset-0 bg-black/55" />
-        <div className="relative h-full max-w-7xl mx-auto px-6 flex flex-col justify-center items-start text-white">
-          <img
-            src="/baracke-logo.png"
-            alt="BaRACke"
-            className="h-20 md:h-28 w-auto mb-4 drop-shadow-lg"
-          />
-          <p className="text-lg md:text-2xl font-medium max-w-xl drop-shadow">
-            Die studentische Kneipe des RheinAhrCampus.
-          </p>
-        </div>
-      </section>
+      <PageHero
+        image={page.heroImageUrl ?? "/Baracke-photo1.jpg"}
+        logo="/baracke-logo.png"
+        title="BaRACke"
+        subtitle="Die studentische Kneipe des RheinAhrCampus"
+      />
 
-      <div className="max-w-7xl mx-auto px-6 py-12 space-y-16">
-        {info && <InfoSection section={info} altText="BaRACke" />}
+      {info && (
+        <Band id="info">
+          <InfoSection section={info} title="Über die BaRACke" altText="BaRACke" />
+        </Band>
+      )}
 
-        {/* Opening hours card. */}
-        {hours && (hours.subtitle || hours.body) && (
-          <section id="oeffnungszeiten" className="scroll-mt-20">
-            <div className="inline-block rounded-lg border border-gray-200 bg-gray-50 px-6 py-4">
-              <h2 className="text-xl font-bold mb-1">
-                {hours.subtitle ?? "Öffnungszeiten"}
-              </h2>
-              <p className="text-gray-700 whitespace-pre-line">{hours.body}</p>
-            </div>
-          </section>
-        )}
+      {hours && (hours.subtitle || hours.body) && (
+        <Band id="oeffnungszeiten" alt>
+          <SectionHeader title={hours.subtitle ?? "Öffnungszeiten"} />
+          <div className="inline-flex items-center gap-4 rounded-2xl border border-gray-200 bg-white shadow-sm px-6 py-5">
+            <span className="grid place-items-center h-12 w-12 rounded-full bg-asta-red/10 text-asta-red shrink-0">
+              <Clock className="h-6 w-6" />
+            </span>
+            <p className="text-gray-700 whitespace-pre-line">{hours.body}</p>
+          </div>
+        </Band>
+      )}
 
-        {/* Drinks menu: two (or more) images side by side. */}
-        {menu.length > 0 && (
-          <section id="getraenkekarte" className="scroll-mt-20">
-            <h2 className="text-2xl font-bold mb-6">Getränkekarte</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              {menu.map((m) => (
-                <MenuCard key={m.id} section={m} />
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* Photo gallery. */}
-        {gallery.length > 0 && (
-          <section id="galerie" className="scroll-mt-20">
-            <h2 className="text-2xl font-bold mb-6">Galerie</h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {gallery.map((g) => (
-                <GalleryCard key={g.id} section={g} />
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* Upcoming BaRACke events (live, clickable, with countdown). */}
+      <Band id="events">
         <UpcomingEvents category="BARACKE" title="Events in der BaRACke" />
-      </div>
+      </Band>
+
+      {menu.length > 0 && (
+        <Band id="getraenkekarte" alt>
+          <SectionHeader title="Getränkekarte" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            {menu.map((m) => (
+              <MenuCard key={m.id} section={m} />
+            ))}
+          </div>
+        </Band>
+      )}
+
+      {gallery.length > 0 && (
+        <Band id="galerie">
+          <SectionHeader title="Galerie" />
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {gallery.map((g) => (
+              <GalleryCard key={g.id} section={g} />
+            ))}
+          </div>
+        </Band>
+      )}
     </div>
   );
 }

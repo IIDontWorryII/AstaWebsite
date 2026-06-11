@@ -9,6 +9,7 @@
 import { useEffect, useState } from "react";
 import type { ProtocolDTO } from "../../../../shared/types";
 import { fetchProtocols } from "@/lib/api";
+import SectionHeader from "@/components/SectionHeader";
 
 interface GremiumProtocolsProps {
   /** Which gremium's protocols to load — sent as the ?gremium= query param. */
@@ -31,8 +32,8 @@ export default function GremiumProtocols({ gremium }: GremiumProtocolsProps) {
   }, [gremium]);
 
   return (
-    <section id="protokolle" className="scroll-mt-20">
-      <h2 className="text-3xl font-bold mb-6">Protokolle</h2>
+    <div>
+      <SectionHeader title="Protokolle" />
 
       {error ? (
         <p className="text-red-600">Fehler: {error}</p>
@@ -69,6 +70,6 @@ export default function GremiumProtocols({ gremium }: GremiumProtocolsProps) {
           ))}
         </ul>
       )}
-    </section>
+    </div>
   );
 }

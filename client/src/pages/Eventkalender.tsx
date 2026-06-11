@@ -15,10 +15,21 @@ import { useFavorites } from "@/auth/FavoritesContext";
 import EventCalendar from "@/components/EventCalendar";
 import EventCard from "@/components/EventCard";
 import EventDialog from "@/components/EventDialog";
+import PageHero from "@/components/PageHero";
 
 const MONTHS = [
-  "Januar", "Februar", "März", "April", "Mai", "Juni",
-  "Juli", "August", "September", "Oktober", "November", "Dezember",
+  "Januar",
+  "Februar",
+  "März",
+  "April",
+  "Mai",
+  "Juni",
+  "Juli",
+  "August",
+  "September",
+  "Oktober",
+  "November",
+  "Dezember",
 ];
 
 /** An event counts as free when it has no price or says frei/kostenlos/0. */
@@ -118,14 +129,12 @@ export default function Eventkalender() {
   return (
     <div>
       {/* Hero */}
-      <section className="bg-asta-red text-white">
-        <div className="max-w-7xl mx-auto px-6 py-12">
-          <h1 className="text-4xl md:text-5xl font-bold">Eventkalender</h1>
-          <p className="mt-3 text-lg md:text-xl text-white/90">
-            Entdecke kommende Veranstaltungen des AStA Remagen
-          </p>
-        </div>
-      </section>
+      <PageHero
+        image="/eventcalender-hero.jpg"
+        logo=""
+        title="Eventcalender"
+        subtitle="Entdecke folgende Veranstaltungen des AStA Remagen"
+      />
 
       <div className="max-w-7xl mx-auto px-6 py-8">
         {/* Search + filters */}

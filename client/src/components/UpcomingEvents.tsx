@@ -15,6 +15,7 @@ import { selectUpcoming } from "@/lib/events";
 import { useFavorites } from "@/auth/FavoritesContext";
 import EventCard from "@/components/EventCard";
 import EventDialog from "@/components/EventDialog";
+import SectionHeader from "@/components/SectionHeader";
 
 interface UpcomingEventsProps {
   /** Filter to this category (EVENT_CATEGORIES value). Omit = all events. */
@@ -50,8 +51,8 @@ export default function UpcomingEvents({
   const upcoming = selectUpcoming(events, { category, limit, now });
 
   return (
-    <section id="events" className="scroll-mt-20">
-      <h2 className="text-2xl font-bold mb-6">{title}</h2>
+    <div>
+      <SectionHeader title={title} />
 
       {upcoming.length === 0 ? (
         <p className="text-gray-500">Zur Zeit sind keine Events geplant.</p>
@@ -73,6 +74,6 @@ export default function UpcomingEvents({
       )}
 
       <EventDialog event={selected} onClose={() => setSelected(null)} />
-    </section>
+    </div>
   );
 }

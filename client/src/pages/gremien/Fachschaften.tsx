@@ -1,13 +1,31 @@
 // client/src/pages/gremien/Fachschaften.tsx
 //
-// Public Fachschaften page. Info + freeform MIT / WiSo sections fetched
-// from the API.
+// Public Fachschaften page: hero + Info + one alternating band per
+// Fachschaft (MIT / WiSo). Each FREEFORM section gets its anchor id from a
+// slug of its subtitle (#mit / #wiso) and its logo from the public folder.
 
 import { useEffect, useState } from "react";
 import type { PageDTO } from "../../../../shared/types";
 import { fetchPage } from "@/lib/pages";
+import PageHero from "@/components/PageHero";
+import Band from "@/components/Band";
 import InfoSection from "@/components/gremien/InfoSection";
 import FreeformSection from "@/components/gremien/FreeformSection";
+
+function slugify(input: string): string {
+  return input
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
+// Map a Fachschaft subtitle to its logo in /public (best-effort).
+function logoFor(subtitle: string | null): string | undefined {
+  const s = (subtitle ?? "").toLowerCase();
+  if (s.includes("wiso")) return "/fswiso-logo.png";
+  if (s.includes("mit") || s.includes("mut")) return "/fsmit-logo.png";
+  return undefined;
+}
 
 export default function Fachschaften() {
   const [page, setPage] = useState<PageDTO | null>(null);
@@ -38,11 +56,27 @@ export default function Fachschaften() {
   const freeforms = page.sections.filter((s) => s.kind === "FREEFORM");
 
   return (
-    <div className="max-w-7xl mx-auto px-6 py-12 space-y-16">
-      <h1 className="text-4xl font-bold">{page.title}</h1>
-      {info && <InfoSection section={info} />}
-      {freeforms.map((s) => (
-        <FreeformSection key={s.id} section={s} />
+    <div>
+      <PageHero
+        image={page.heroImageUrl ?? "/fachschaft-hero.jpg"}
+        title="Fachschaften"
+        subtitle="Deine Vertretung im Fachbereich"
+      />
+
+      {info && (
+        <Band id="info">
+          <InfoSection section={info} title="Über die Fachschaften" />
+        </Band>
+      )}
+
+      {freeforms.map((s, i) => (
+        <Band key={s.id} id={slugify(s.subtitle ?? s.id)} alt={i % 2 === 0}>
+          <FreeformSection
+            section={s}
+            imageRight={i % 2 === 1}
+            logo={logoFor(s.subtitle)}
+          />
+        </Band>
       ))}
     </div>
   );

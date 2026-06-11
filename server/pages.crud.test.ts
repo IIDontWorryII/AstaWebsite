@@ -435,3 +435,53 @@ describe("POST /api/admin/sections/:id/move", () => {
     expect(after?.order).toBe(last.order);
   });
 });
+
+describe("PUT /api/admin/pages/:slug/hero", () => {
+  it("rejects with 403 when authenticated as USER role", async () => {
+    const userAgent = request.agent(app);
+    const email = `test-crud-hero-user-${Date.now()}@example.com`;
+    await userAgent
+      .post("/api/signup")
+      .send({ email, password: "password123", displayName: "Hero User" })
+      .expect(200);
+    const res = await userAgent
+      .put("/api/admin/pages/asta/hero")
+      .attach("image", ONE_PIXEL_PNG, {
+        filename: "h.png",
+        contentType: "image/png",
+      });
+    expect(res.status).toBe(403);
+    await prisma.user.deleteMany({ where: { email } });
+  });
+
+  it("sets a hero image and then clears it", async () => {
+    const set = await editorAgent
+      .put("/api/admin/pages/asta/hero")
+      .attach("image", ONE_PIXEL_PNG, {
+        filename: "h.png",
+        contentType: "image/png",
+      });
+    expect(set.status).toBe(200);
+    expect(set.body.heroImageUrl).toMatch(
+      /^https:\/\/test-public\.r2\.dev\/page-sections\/[a-f0-9-]+\.png$/,
+    );
+
+    const cleared = await editorAgent
+      .put("/api/admin/pages/asta/hero")
+      .field("removeHero", "true");
+    expect(cleared.status).toBe(200);
+    expect(cleared.body.heroImageUrl).toBeNull();
+  });
+
+  it("returns 404 for an unknown page", async () => {
+    const res = await editorAgent
+      .put("/api/admin/pages/does-not-exist/hero")
+      .field("removeHero", "true");
+    expect(res.status).toBe(404);
+  });
+
+  it("returns 400 when no image and no removeHero flag is sent", async () => {
+    const res = await editorAgent.put("/api/admin/pages/asta/hero").field("x", "y");
+    expect(res.status).toBe(400);
+  });
+});

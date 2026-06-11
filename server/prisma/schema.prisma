@@ -63,11 +63,14 @@ model Favorite {
 }
 
 model Page {
-  id       String        @id @default(uuid())
-  slug     String        @unique
-  title    String
-  intro    String?
-  sections PageSection[]
+  id           String        @id @default(uuid())
+  slug         String        @unique
+  title        String
+  intro        String?
+  // Optional hero background image, editable per page in admin. Falls back
+  // to a bundled default in the page component when null.
+  heroImageUrl String?
+  sections     PageSection[]
 }
 
 model PageSection {

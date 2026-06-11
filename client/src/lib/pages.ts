@@ -17,6 +17,26 @@ export async function fetchPage(slug: string): Promise<PageDTO> {
   return jsonOrThrow<PageDTO>(res, "Failed to fetch page");
 }
 
+/**
+ * Set or clear a page's hero image. Pass an image File to replace it
+ * (compressed client-side first), or removeHero=true to clear it.
+ */
+export async function updatePageHero(
+  slug: string,
+  image?: File | null,
+  removeHero?: boolean,
+): Promise<PageDTO> {
+  const fd = new FormData();
+  if (image) fd.append("image", await compressImage(image));
+  else if (removeHero) fd.append("removeHero", "true");
+
+  const res = await apiFetch(
+    `/api/admin/pages/${encodeURIComponent(slug)}/hero`,
+    { method: "PUT", body: fd },
+  );
+  return jsonOrThrow<PageDTO>(res, "Failed to update hero image");
+}
+
 /** Fields the admin can change on an existing section. */
 export interface SectionUpdateInput {
   subtitle?: string;

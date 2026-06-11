@@ -1,11 +1,14 @@
 // client/src/pages/gremien/Stupa.tsx
 //
-// Public StuPa page. Info + Mitglieder fetched from the API; Protokolle
-// stays unchanged.
+// Public StuPa page: hero + bands (Info, Mitglieder, Protokolle). The first
+// two MEMBER cards (Präsident & Vize) form the top row; the rest wrap below.
 
 import { useEffect, useState } from "react";
 import type { PageDTO } from "../../../../shared/types";
 import { fetchPage } from "@/lib/pages";
+import PageHero from "@/components/PageHero";
+import Band from "@/components/Band";
+import SectionHeader from "@/components/SectionHeader";
 import InfoSection from "@/components/gremien/InfoSection";
 import MemberCard from "@/components/gremien/MemberCard";
 import GremiumProtocols from "./GremiumProtocols";
@@ -36,41 +39,45 @@ export default function Stupa() {
   }
 
   const info = page.sections.find((s) => s.kind === "INFO");
-  // All members come from MEMBER sections, ordered by their `order` field
-  // (the admin can reorder them). The first two — Präsident & Vize — go in
-  // the top row; everyone after that wraps in the row below.
   const members = page.sections.filter((s) => s.kind === "MEMBER");
   const leadership = members.slice(0, 2);
   const rest = members.slice(2);
 
   return (
-    <div className="max-w-7xl mx-auto px-6 py-12 space-y-16">
-      <h1 className="text-4xl font-bold">{page.title}</h1>
-      {info && <InfoSection section={info} altText="StuPa-Team" />}
+    <div>
+      <PageHero
+        image={page.heroImageUrl ?? "/stupa-hero.webp"}
+        title="StuPa"
+        subtitle="Studierendenparlament"
+      />
+
+      {info && (
+        <Band id="info">
+          <InfoSection section={info} title="Über das StuPa" altText="StuPa-Team" />
+        </Band>
+      )}
 
       {members.length > 0 && (
-        <section id="mitglieder" className="scroll-mt-20 space-y-10">
-          <h2 className="text-2xl font-bold">Mitglieder</h2>
-
-          {/* Top row: Präsident & Vizepräsident. */}
+        <Band id="mitglieder" alt>
+          <SectionHeader title="Mitglieder" />
           <div className="flex flex-wrap justify-center gap-10">
             {leadership.map((m) => (
               <MemberCard key={m.id} section={m} />
             ))}
           </div>
-
-          {/* Remaining members wrap across the rows below. */}
           {rest.length > 0 && (
-            <div className="flex flex-wrap justify-center gap-10">
+            <div className="flex flex-wrap justify-center gap-10 mt-10">
               {rest.map((m) => (
                 <MemberCard key={m.id} section={m} />
               ))}
             </div>
           )}
-        </section>
+        </Band>
       )}
 
-      <GremiumProtocols gremium="STUPA" />
+      <Band id="protokolle">
+        <GremiumProtocols gremium="STUPA" />
+      </Band>
     </div>
   );
 }

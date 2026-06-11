@@ -622,6 +622,42 @@ app.get(
   },
 );
 
+// Update a page's hero image (admin only). Multipart: a new image in the
+// "image" field replaces the current hero; removeHero="true" clears it.
+app.put(
+  "/api/admin/pages/:slug/hero",
+  requireEditor,
+  parseSectionImage,
+  async (
+    req: Request<{ slug: string }>,
+    res: Response<PageDTO | { error: string }>,
+  ) => {
+    const { slug } = req.params;
+    const existing = await prisma.page.findUnique({ where: { slug } });
+    if (!existing) {
+      return res.status(404).json({ error: "Page not found" });
+    }
+
+    let heroImageUrl: string | null | undefined;
+    if (req.file) {
+      heroImageUrl = await storeSectionImage(req.file);
+      await deleteSectionImageByUrl(existing.heroImageUrl);
+    } else if (req.body.removeHero === "true") {
+      heroImageUrl = null;
+      await deleteSectionImageByUrl(existing.heroImageUrl);
+    } else {
+      return res.status(400).json({ error: "No image provided" });
+    }
+
+    await prisma.page.update({ where: { slug }, data: { heroImageUrl } });
+    const page = await prisma.page.findUniqueOrThrow({
+      where: { slug },
+      include: { sections: { orderBy: { order: "asc" } } },
+    });
+    return res.json(toPageDTO(page));
+  },
+);
+
 // ─── Gremium page section editing (admin only) ─────────────────────────
 
 // Update a section's editable fields. Multipart so an optional new image

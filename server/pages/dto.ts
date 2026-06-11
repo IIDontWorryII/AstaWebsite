@@ -30,6 +30,7 @@ export function toPageDTO(
     slug: page.slug,
     title: page.title,
     intro: page.intro,
+    heroImageUrl: page.heroImageUrl,
     sections: page.sections.map(toPageSectionDTO),
   };
 }

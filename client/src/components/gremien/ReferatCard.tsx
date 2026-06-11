@@ -1,8 +1,15 @@
 // client/src/components/gremien/ReferatCard.tsx
 //
-// Renders one REFERAT section: text on the left, portrait photo + holder
-// caption on the right. Same layout the original hardcoded Asta.tsx used.
+// One REFERAT, styled per the design concept: a rounded card with the role +
+// description on the left, and a portrait "person card" (photo, role, name,
+// contact) on the right. Content-only — the page lays these out in a grid.
+//
+//   subtitle → role / Referat name ("Vorsitz")
+//   body     → description
+//   caption  → holder's name
+//   email    → contact
 
+import { Mail, Users } from "lucide-react";
 import type { PageSectionDTO } from "../../../../shared/types";
 
 interface ReferatCardProps {
@@ -11,40 +18,54 @@ interface ReferatCardProps {
 
 export default function ReferatCard({ section }: ReferatCardProps) {
   return (
-    <article className="grid md:grid-cols-[1fr_200px] gap-8 items-start">
+    <article className="rounded-2xl border border-gray-200 bg-white shadow-sm p-6 md:p-8 grid md:grid-cols-[1fr_260px] gap-8 items-start">
+      {/* Left: role + description */}
       <div>
-        <h3 className="text-xl font-bold mb-3">{section.subtitle ?? ""}:</h3>
-        <p className="text-gray-700 leading-relaxed mb-4 whitespace-pre-line">
+        <div className="flex items-center gap-2 mb-3">
+          <span className="grid place-items-center h-8 w-8 rounded-full bg-asta-red text-white shrink-0">
+            <Users className="h-4 w-4" />
+          </span>
+          <h3 className="text-lg font-bold uppercase tracking-wide text-asta-red">
+            {section.subtitle}
+          </h3>
+        </div>
+        <p className="text-gray-700 leading-relaxed whitespace-pre-line max-w-prose">
           {section.body}
         </p>
-        {section.email && (
-          <p className="text-sm">
-            <span className="font-semibold underline">Email:</span>{" "}
-            <a
-              href={`mailto:${section.email}`}
-              className="hover:text-asta-red"
-            >
-              {section.email}
-            </a>
-          </p>
-        )}
       </div>
-      {section.imageUrl && (
-        <figure className="text-center">
+
+      {/* Right: portrait person card */}
+      <div className="rounded-xl border border-gray-200 p-5 text-center">
+        {section.imageUrl ? (
           <img
             src={section.imageUrl}
             alt={section.caption ?? section.subtitle ?? "Referat"}
-            className="w-40 h-40 rounded-full object-cover mx-auto"
+            loading="lazy"
+            decoding="async"
+            className="w-28 h-28 rounded-full object-cover mx-auto"
           />
-          {(section.subtitle || section.caption) && (
-            <figcaption className="italic mt-2 text-sm">
-              {section.subtitle}
-              {section.subtitle && section.caption ? ": " : ""}
-              {section.caption}
-            </figcaption>
-          )}
-        </figure>
-      )}
+        ) : (
+          <div className="w-28 h-28 rounded-full bg-asta-red/10 mx-auto" aria-hidden />
+        )}
+        {section.subtitle && (
+          <p className="text-asta-red font-semibold uppercase text-xs tracking-wide mt-3">
+            {section.subtitle}
+          </p>
+        )}
+        {section.caption && (
+          <p className="text-lg font-bold leading-tight">{section.caption}</p>
+        )}
+        {section.email && (
+          <a
+            href={`mailto:${section.email}`}
+            aria-label={`E-Mail an ${section.caption ?? section.subtitle ?? "Referat"}`}
+            className="inline-flex items-center justify-center gap-1 mt-3 text-sm text-gray-600 hover:text-asta-red"
+          >
+            <Mail className="h-4 w-4" />
+            E-Mail
+          </a>
+        )}
+      </div>
     </article>
   );
 }
