@@ -28,6 +28,7 @@ function makeEvent(over: Partial<EventDTO>): EventDTO {
     price: null,
     place: "Campus",
     category: null,
+    registrationEmail: null,
     startsAt: new Date().toISOString(),
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),

@@ -33,6 +33,8 @@ import {
 export default function AdminEvents() {
   const [events, setEvents] = useState<EventDTO[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // Show upcoming events by default; toggle to past ones.
+  const [status, setStatus] = useState<"active" | "past">("active");
 
   // Stable reference so we can call this from both useEffect and the
   // delete handler without redeclaring the logic.
@@ -58,9 +60,23 @@ export default function AdminEvents() {
     }
   }
 
+  // Filter by the active/past toggle, then sort: upcoming ascending
+  // (soonest first), past descending (most recent first).
+  const now = Date.now();
+  const visible = (events ?? [])
+    .filter((e) => {
+      const past = new Date(e.startsAt).getTime() < now;
+      return status === "active" ? !past : past;
+    })
+    .sort((a, b) => {
+      const aT = new Date(a.startsAt).getTime();
+      const bT = new Date(b.startsAt).getTime();
+      return status === "active" ? aT - bT : bT - aT;
+    });
+
   return (
     <section className="max-w-5xl mx-auto px-6 py-12">
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex items-center justify-between mb-6">
         <h1 className="text-3xl font-bold">Events verwalten</h1>
         <Button
           render={<Link to="/admin/events/new" />}
@@ -71,6 +87,28 @@ export default function AdminEvents() {
         </Button>
       </div>
 
+      {/* Active / past toggle. */}
+      <div className="inline-flex rounded border border-gray-300 overflow-hidden text-sm mb-8">
+        <button
+          type="button"
+          onClick={() => setStatus("active")}
+          className={`px-3 py-2 cursor-pointer ${
+            status === "active" ? "bg-asta-red text-white" : "bg-white"
+          }`}
+        >
+          Aktiv
+        </button>
+        <button
+          type="button"
+          onClick={() => setStatus("past")}
+          className={`px-3 py-2 cursor-pointer ${
+            status === "past" ? "bg-asta-red text-white" : "bg-white"
+          }`}
+        >
+          Vergangen
+        </button>
+      </div>
+
       {error && (
         <p className="text-red-600 mb-4" role="alert">
           Fehler: {error}
@@ -79,13 +117,15 @@ export default function AdminEvents() {
 
       {events === null ? (
         <p className="text-gray-500">Lädt…</p>
-      ) : events.length === 0 ? (
+      ) : visible.length === 0 ? (
         <p className="text-gray-500">
-          Noch keine Events. Klicke „Neues Event“ um das erste anzulegen.
+          {status === "active"
+            ? "Keine aktiven Events. Klicke „Neues Event“ um eines anzulegen."
+            : "Keine vergangenen Events."}
         </p>
       ) : (
         <ul className="divide-y divide-gray-200 border border-gray-200 rounded-lg">
-          {events.map((event) => (
+          {visible.map((event) => (
             <li
               key={event.id}
               className="flex items-center justify-between gap-4 p-4"

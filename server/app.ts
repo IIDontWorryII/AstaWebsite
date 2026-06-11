@@ -115,6 +115,7 @@ app.post(
         startsAt: new Date(data.startsAt),
         price: data.price ?? null,
         category: data.category ? data.category : null,
+        registrationEmail: data.registrationEmail ? data.registrationEmail : null,
         imageUrl,
       },
     });
@@ -161,6 +162,7 @@ app.put(
       startsAt?: Date;
       price?: string | null;
       category?: string | null;
+      registrationEmail?: string | null;
       imageUrl?: string | null;
     } = {};
     if (data.title !== undefined) updatePayload.title = data.title;
@@ -171,6 +173,11 @@ app.put(
     // Empty string clears the category (set null); a real value sets it.
     if (data.category !== undefined)
       updatePayload.category = data.category ? data.category : null;
+    // Empty string clears the registration email.
+    if (data.registrationEmail !== undefined)
+      updatePayload.registrationEmail = data.registrationEmail
+        ? data.registrationEmail
+        : null;
     if (req.file) {
       // Upload new image to R2, then delete the previous one from R2.
       // Order matters: upload first so we don't lose both if upload fails.

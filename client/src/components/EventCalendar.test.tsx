@@ -19,6 +19,7 @@ const event: EventDTO = {
   price: null,
   place: "Campus",
   category: null,
+  registrationEmail: null,
   startsAt: new Date(today.getFullYear(), today.getMonth(), 15, 18, 0).toISOString(),
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString(),

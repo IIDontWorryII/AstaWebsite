@@ -151,6 +151,27 @@ describe("POST /api/events", () => {
     expect(bad.status).toBe(400);
   });
 
+  it("stores a registration email and rejects an invalid one", async () => {
+    const ok = await editorAgent
+      .post("/api/events")
+      .field("title", uniqueTitle("create-reg"))
+      .field("description", "Description")
+      .field("place", "Campus")
+      .field("startsAt", "2026-12-01T18:00:00.000Z")
+      .field("registrationEmail", "anmeldung@example.com");
+    expect(ok.status).toBe(201);
+    expect(ok.body.registrationEmail).toBe("anmeldung@example.com");
+
+    const bad = await editorAgent
+      .post("/api/events")
+      .field("title", uniqueTitle("bad-reg"))
+      .field("description", "Description")
+      .field("place", "Campus")
+      .field("startsAt", "2026-12-01T18:00:00.000Z")
+      .field("registrationEmail", "not-an-email");
+    expect(bad.status).toBe(400);
+  });
+
   it("creates an event with an image and uploads it to storage", async () => {
     const title = uniqueTitle("create-with-img");
     const res = await editorAgent

@@ -18,6 +18,7 @@ export function toEventDTO(e: PrismaEvent): EventDTO {
     price: e.price,
     place: e.place,
     category: e.category,
+    registrationEmail: e.registrationEmail,
     startsAt: e.startsAt.toISOString(),
     createdAt: e.createdAt.toISOString(),
     updatedAt: e.updatedAt.toISOString(),

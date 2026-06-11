@@ -24,6 +24,8 @@ export interface EventFormInput {
   price?: string;
   /** One of EVENT_CATEGORIES' values, or "" for none. */
   category?: string;
+  /** Email for registration; "" = no registration required. */
+  registrationEmail?: string;
 }
 
 /**

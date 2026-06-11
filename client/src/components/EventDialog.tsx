@@ -135,14 +135,26 @@ export default function EventDialog({ event, onClose }: EventDialogProps) {
             </div>
           </div>
 
-          {/* Right: poster */}
-          {event.imageUrl && (
+          {/* Right: poster + (optional) registration button under it. */}
+          {(event.imageUrl || event.registrationEmail) && (
             <div className="order-1 md:order-2">
-              <img
-                src={event.imageUrl}
-                alt={event.title}
-                className="w-full rounded-lg object-contain"
-              />
+              {event.imageUrl && (
+                <img
+                  src={event.imageUrl}
+                  alt={event.title}
+                  className="w-full aspect-[4/5] rounded-lg object-contain bg-gray-100"
+                />
+              )}
+              {event.registrationEmail && (
+                <a
+                  href={`mailto:${event.registrationEmail}?subject=${encodeURIComponent(
+                    `${event.title} Anmeldung`,
+                  )}`}
+                  className="mt-3 block w-full text-center rounded-lg bg-asta-red text-white font-semibold px-4 py-2.5 hover:bg-asta-red-dark"
+                >
+                  Sich anmelden
+                </a>
+              )}
             </div>
           )}
         </div>

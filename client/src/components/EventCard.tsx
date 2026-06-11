@@ -46,7 +46,7 @@ export default function EventCard({
           alt={event.title}
           loading="lazy"
           decoding="async"
-          className="aspect-[4/5] w-full object-cover"
+          className="aspect-[4/5] w-full object-contain bg-gray-100"
         />
       ) : (
         // Decorative placeholder when there's no poster (title shows below).

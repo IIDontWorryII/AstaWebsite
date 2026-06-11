@@ -70,6 +70,9 @@ export default function EventForm({ event }: EventFormProps) {
   );
   const [price, setPrice] = useState(event?.price ?? "");
   const [category, setCategory] = useState(event?.category ?? "");
+  const [registrationEmail, setRegistrationEmail] = useState(
+    event?.registrationEmail ?? "",
+  );
 
   // ─── File state ───
   // `file` is the newly-selected File (or null if none picked yet).
@@ -125,6 +128,8 @@ export default function EventForm({ event }: EventFormProps) {
         price: price.trim() === "" ? undefined : price,
         // "" is allowed — the server reads it as "no category".
         category,
+        // "" = no registration required.
+        registrationEmail: registrationEmail.trim(),
       };
 
       if (isEdit) {
@@ -252,6 +257,28 @@ export default function EventForm({ event }: EventFormProps) {
           <p className="text-xs text-gray-500 mt-1">
             Bestimmt, auf welcher Referat-Seite das Event in „Bevorstehende
             Events“ erscheint.
+          </p>
+        </div>
+
+        <div>
+          <label
+            htmlFor="registrationEmail"
+            className="block text-sm font-semibold mb-1"
+          >
+            Anmeldung per E-Mail{" "}
+            <span className="text-gray-500 font-normal">(optional)</span>
+          </label>
+          <input
+            id="registrationEmail"
+            type="email"
+            placeholder="z.B. rac-asta-vorsitz@rheinahrcampus.de"
+            value={registrationEmail}
+            onChange={(e) => setRegistrationEmail(e.target.value)}
+            className="w-full border border-gray-300 rounded px-3 py-2"
+          />
+          <p className="text-xs text-gray-500 mt-1">
+            Wenn gesetzt, zeigt das Event einen „Sich anmelden“-Button, der eine
+            E-Mail an diese Adresse öffnet.
           </p>
         </div>
 

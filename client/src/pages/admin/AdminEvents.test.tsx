@@ -51,7 +51,9 @@ const baseEvent: EventDTO = {
   price: null,
   place: "Campus",
   category: null,
-  startsAt: "2026-07-15T18:00:00.000Z",
+  registrationEmail: null,
+  // Future date so it shows under the default "Aktiv" filter.
+  startsAt: new Date(Date.now() + 30 * 86_400_000).toISOString(),
   createdAt: "2026-05-01T00:00:00.000Z",
   updatedAt: "2026-05-01T00:00:00.000Z",
 };
@@ -82,8 +84,8 @@ describe("AdminEvents", () => {
 
     renderPage();
 
-    // The hint text starts with "Noch keine Events." — match a substring.
-    expect(await screen.findByText(/Noch keine Events/)).toBeInTheDocument();
+    // Default "Aktiv" filter, no events → the active empty-state hint.
+    expect(await screen.findByText(/Keine aktiven Events/)).toBeInTheDocument();
   });
 
   it("runs the delete flow: confirms via dialog, calls deleteEvent, re-fetches the list", async () => {
@@ -114,7 +116,7 @@ describe("AdminEvents", () => {
 
     // The page re-fetched (now returning empty), so the empty state appears.
     await waitFor(() => {
-      expect(screen.getByText(/Noch keine Events/)).toBeInTheDocument();
+      expect(screen.getByText(/Keine aktiven Events/)).toBeInTheDocument();
     });
   });
 

@@ -60,6 +60,8 @@ export interface EventDTO {
   place: string;
   /** One of EVENT_CATEGORIES' values, or null for untagged events. */
   category: string | null;
+  /** Email to register for the event, or null if no registration needed. */
+  registrationEmail: string | null;
   startsAt: string;
   createdAt: string;
   updatedAt: string;

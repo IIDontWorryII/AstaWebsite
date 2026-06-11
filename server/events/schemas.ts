@@ -24,6 +24,8 @@ export const EventCreateInput = z.object({
   price: z.string().optional(),
   // Optional referat/group tag. Empty string is treated as "no category".
   category: z.enum(CATEGORY_VALUES).optional().or(z.literal("")),
+  // Optional registration email. Empty string clears it.
+  registrationEmail: z.string().email().optional().or(z.literal("")),
 });
 
 /**

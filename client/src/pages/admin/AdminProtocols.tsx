@@ -16,6 +16,7 @@ import {
   fetchAllProtocols,
 } from "@/lib/admin-protocols";
 import { Button } from "@/components/ui/button";
+import GremiumBadge from "@/components/GremiumBadge";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -26,23 +27,6 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-
-/** Color-coded gremium badge — visual cue for the row's source body. */
-function GremiumBadge({ gremium }: { gremium: string }) {
-  // Map known gremien to colors; unknown values fall back to grey.
-  const palette: Record<string, string> = {
-    ASTA: "bg-asta-red text-white",
-    STUPA: "bg-blue-600 text-white",
-  };
-  const className = palette[gremium] ?? "bg-gray-300 text-gray-800";
-  return (
-    <span
-      className={`inline-block px-2 py-0.5 rounded text-xs font-semibold ${className}`}
-    >
-      {gremium}
-    </span>
-  );
-}
 
 export default function AdminProtocols() {
   const [protocols, setProtocols] = useState<ProtocolDTO[] | null>(null);

@@ -12,6 +12,7 @@ import { selectUpcoming } from "@/lib/events";
 import { useFavorites } from "@/auth/FavoritesContext";
 import EventCard from "@/components/EventCard";
 import EventDialog from "@/components/EventDialog";
+import GremiumBadge from "@/components/GremiumBadge";
 
 export default function EventsSection() {
   const [events, setEvents] = useState<EventDTO[]>([]);
@@ -95,17 +96,22 @@ export default function EventsSection() {
                       href={p.fileUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="bg-white rounded-lg p-3 flex items-center justify-between gap-2 hover:bg-asta-red hover:text-white"
+                      className="bg-white rounded-lg p-3 block hover:bg-gray-50"
                     >
-                      <span>
-                        <span className="block text-sm">{p.title}</span>
-                        {p.description && (
-                          <span className="block text-xs opacity-70">
-                            {p.description}
-                          </span>
-                        )}
+                      <span className="flex items-center gap-2">
+                        <GremiumBadge gremium={p.gremium} />
+                        <span className="text-sm font-medium flex-1 truncate">
+                          {p.title}
+                        </span>
+                        <span aria-hidden className="text-gray-400">
+                          ↓
+                        </span>
                       </span>
-                      <span aria-hidden>↓</span>
+                      {p.description && (
+                        <span className="block text-xs text-gray-500 mt-1">
+                          {p.description}
+                        </span>
+                      )}
                     </a>
                   </li>
                 ))}
