@@ -6,7 +6,10 @@ import ScrollToHash from "./ScrollToHash";
 
 export default function Layout() {
   return (
-    <div>
+    // min-h-screen + flex column lets the footer sink to the bottom of the
+    // viewport on short pages (main grows to fill the gap) instead of floating
+    // mid-screen.
+    <div className="flex flex-col min-h-screen">
       <ScrollToHash />
       {/* Skip link: hidden until focused, lets keyboard users jump straight
           to the main content past the nav. */}
@@ -19,7 +22,7 @@ export default function Layout() {
       <Header />
       {/* tabIndex=-1 lets the skip link move focus here without making it a
           tab stop in normal navigation. */}
-      <main id="main" tabIndex={-1} className="outline-none">
+      <main id="main" tabIndex={-1} className="flex-1 outline-none">
         <Outlet />
       </main>
       <Footer />

@@ -11,7 +11,6 @@ import {
   NavigationMenuList,
   NavigationMenuTrigger,
 } from "@/components/ui/navigation-menu";
-import { Button } from "@/components/ui/button";
 import { useAuth } from "@/auth/AuthContext";
 import { SOCIAL_LINKS } from "@/lib/socials";
 
@@ -138,8 +137,9 @@ export default function Header() {
           )}
         </nav>
 
-        {/* Right (desktop): social icons, then the auth widget. Hidden on
-            mobile, where everything moves into the hamburger panel. */}
+        {/* Right (desktop): social icons. Login/Profil moved to the footer
+            (AW-…) — only editors need an account, so it no longer lives in
+            the top nav. Hidden on mobile (everything moves into the panel). */}
         <div className="hidden md:flex items-center gap-4">
           <a
             href={SOCIAL_LINKS.instagram}
@@ -169,8 +169,6 @@ export default function Header() {
               className="h-6 w-6"
             />
           </a>
-
-          <AuthWidget />
         </div>
 
         {/* Hamburger (mobile only) */}
@@ -243,30 +241,9 @@ function MobileMenu({
           </NavLink>
         )}
 
-        {/* Auth + socials */}
+        {/* Socials. Login/Profil moved to the footer (AW-…). */}
         <div className="mt-3 pt-3 border-t border-gray-200">
-          {user ? (
-            <Link to="/profile" className={itemClass}>
-              Mein Profil
-            </Link>
-          ) : (
-            <div className="flex items-center gap-4 py-1">
-              <Link
-                to="/login"
-                className="text-base font-medium hover:text-asta-red"
-              >
-                Login
-              </Link>
-              <Link
-                to="/signup"
-                className="text-base font-medium text-asta-red"
-              >
-                Registrieren
-              </Link>
-            </div>
-          )}
-
-          <div className="flex items-center gap-4 mt-3">
+          <div className="flex items-center gap-4">
             <a
               href={SOCIAL_LINKS.instagram}
               target="_blank"
@@ -299,64 +276,5 @@ function MobileMenu({
         </div>
       </nav>
     </div>
-  );
-}
-
-/**
- * Right-hand auth controls. Reads the current user from AuthContext and
- * shows one of three states:
- *   - loading: nothing (avoids a "Login" flash for users who actually have
- *              a valid session — the /api/me check is in flight)
- *   - logged out: Login link + Registrieren button
- *   - logged in:  an avatar circle linking to the profile (Logout now lives
- *                 on the profile page itself — AW-46)
- */
-function AuthWidget() {
-  const { user, loading } = useAuth();
-
-  // During the initial session check, render nothing (avoids a Login flash).
-  if (loading) {
-    return null;
-  }
-
-  // Logged out: Login link + Registrieren button.
-  if (!user) {
-    return (
-      <div className="flex items-center gap-3">
-        <Link to="/login" className="text-sm font-medium hover:text-asta-red">
-          Login
-        </Link>
-        {/* Base UI's Button uses `render={<Link/>}` (not `asChild` like Radix)
-            to delegate rendering to a Link without losing button styles.
-            `nativeButton={false}` tells Base UI we're rendering an <a>, not
-            a <button> — without it, Base UI logs an accessibility warning. */}
-        <Button
-          render={<Link to="/signup" />}
-          nativeButton={false}
-          size="sm"
-          variant="brandOutline"
-        >
-          Registrieren
-        </Button>
-      </div>
-    );
-  }
-
-  // Logged in: the user's avatar (or the default icon) linking to the
-  // profile page. A touch larger than the social icons so it reads as a
-  // distinct control.
-  return (
-    <Link
-      to="/profile"
-      aria-label="Mein Profil"
-      title="Mein Profil"
-      className="hover:opacity-80 transition-opacity"
-    >
-      <img
-        src={user.avatarUrl ?? "/profile-icon.png"}
-        alt="Mein Profil"
-        className="h-10 w-10 rounded-full object-cover"
-      />
-    </Link>
   );
 }

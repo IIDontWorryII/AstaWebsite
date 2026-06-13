@@ -19,6 +19,9 @@ export default function Profile() {
   const favorites = useFavorites();
   const navigate = useNavigate();
   const [selectedEvent, setSelectedEvent] = useState<EventDTO | null>(null);
+  // The edit + password forms are hidden until the user opts in, so the
+  // profile reads as a clean overview by default.
+  const [editing, setEditing] = useState(false);
 
   // Edit-form state. Initialized from the user once it's available.
   const [name, setName] = useState("");
@@ -155,8 +158,23 @@ export default function Profile() {
         <dd>{new Date(user.createdAt).toLocaleDateString("de-DE")}</dd>
       </dl>
 
+      {/* Toggle: reveals the edit + password forms below. */}
+      <div className="mt-12 border-t pt-8">
+        <Button
+          type="button"
+          variant="brandOutline"
+          onClick={() => setEditing((o) => !o)}
+          aria-expanded={editing}
+          className="cursor-pointer"
+        >
+          {editing ? "Bearbeiten schließen" : "Profil bearbeiten"}
+        </Button>
+      </div>
+
+      {editing && (
+        <>
       {/* Edit form: display name + avatar. */}
-      <form onSubmit={handleSave} className="mt-12 border-t pt-8 space-y-4">
+      <form onSubmit={handleSave} className="mt-8 space-y-4">
         <h2 className="text-xl font-semibold">Profil bearbeiten</h2>
 
         <div>
@@ -288,6 +306,8 @@ export default function Profile() {
           {pwSubmitting ? "Speichert…" : "Passwort ändern"}
         </Button>
       </form>
+        </>
+      )}
 
       {/* Favorited events ("Merkliste"). */}
       <section className="mt-12 border-t pt-8">
@@ -325,12 +345,12 @@ export default function Profile() {
         )}
       </section>
 
-      {/* Logout at the bottom. */}
+      {/* Logout at the bottom — full-width so it reads as the final action. */}
       <div className="mt-12 border-t pt-8">
         <Button
           onClick={handleLogout}
           variant="brandOutline"
-          className="cursor-pointer"
+          className="w-full cursor-pointer"
         >
           Logout
         </Button>

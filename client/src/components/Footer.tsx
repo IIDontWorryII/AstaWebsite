@@ -1,9 +1,13 @@
 // client/src/components/Footer.tsx
 
 import { Link } from "react-router-dom";
-import { SOCIAL_LINKS } from "@/lib/socials";
+import { Play } from "lucide-react";
+import { ABOUT_VIDEO_URL, SOCIAL_LINKS } from "@/lib/socials";
+import { useAuth } from "@/auth/AuthContext";
 
 export default function Footer() {
+  const { user, loading } = useAuth();
+
   return (
     <footer className="relative bg-asta-red text-white overflow-hidden">
       {/* Decorative watermark — behind content. aria-hidden because it's purely visual */}
@@ -14,10 +18,14 @@ export default function Footer() {
         className="absolute right-0 bottom-0 h-full w-auto opacity-50 pointer-events-none"
       />
 
-      {/* Content sits on top of the watermark via z-10 */}
+      {/* Content sits on top of the watermark via z-10.
+          Uneven columns: the Gremien-video column gets extra width (and the
+          quick-links column a little less) so the video fills the space
+          between Schnelllinks and "Mein Bereich" instead of leaving a gap. */}
       <div
         className="relative z-10 max-w-7xl mx-auto px-6 py-8
-                      grid grid-cols-1 md:grid-cols-3 gap-8"
+                      grid grid-cols-1 gap-8
+                      md:grid-cols-[1fr_0.6fr_1.8fr_0.9fr]"
       >
         {/* Col 1: org info + contact */}
         <div>
@@ -74,8 +82,67 @@ export default function Footer() {
           </ul>
         </div>
 
-        {/* Col 3: socials */}
+        {/* Col 3: "Über uns" video — a thumbnail linking out to YouTube in a
+            new tab. No iframe embed, so no YouTube cookies / cookie banner. */}
         <div>
+          <h3 className="text-lg font-bold mb-4">
+            Was sind eigentlich die studentische Gremien?
+          </h3>
+          <a
+            href={ABOUT_VIDEO_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group block relative w-full max-w-sm rounded-lg overflow-hidden shadow-lg"
+            aria-label="Video zu den studentischen Gremien auf YouTube ansehen"
+          >
+            <img
+              src="/ueber-uns-video.webp"
+              alt="Vorschaubild des Videos über die studentischen Gremien"
+              loading="lazy"
+              decoding="async"
+              className="w-full aspect-video object-cover"
+            />
+            {/* Play badge centered over the thumbnail. */}
+            <span className="absolute inset-0 grid place-items-center bg-black/20 group-hover:bg-black/30 transition-colors">
+              <span className="grid place-items-center h-12 w-12 rounded-full bg-asta-red/90 text-white shadow-lg">
+                <Play className="h-6 w-6 translate-x-0.5 fill-current" />
+              </span>
+            </span>
+          </a>
+        </div>
+
+        {/* Col 4: account (moved here from the header) + socials */}
+        <div>
+          {/* Login/Registrierung or profile link. Hidden while the session
+              check is in flight to avoid a flash of the wrong state. */}
+          {!loading && (
+            <div className="mb-6">
+              <h3 className="text-lg font-bold mb-4">Mein Bereich</h3>
+              {user ? (
+                <ul className="space-y-2 text-sm">
+                  <li>
+                    <Link to="/profile" className="hover:underline">
+                      Mein Profil
+                    </Link>
+                  </li>
+                </ul>
+              ) : (
+                <ul className="space-y-2 text-sm">
+                  <li>
+                    <Link to="/login" className="hover:underline">
+                      Login
+                    </Link>
+                  </li>
+                  <li>
+                    <Link to="/signup" className="hover:underline">
+                      Registrieren
+                    </Link>
+                  </li>
+                </ul>
+              )}
+            </div>
+          )}
+
           <h3 className="text-lg font-bold mb-4">Folge uns</h3>
           <div className="flex gap-4">
             <a

@@ -59,26 +59,19 @@ describe("Header", () => {
     expect(homeLink).not.toHaveClass("text-asta-red");
   });
 
-  it("shows Login and Registrieren when logged out", () => {
+  it("does not render auth controls in the header (they moved to the footer)", () => {
     render(
       <MemoryRouter initialEntries={["/"]}>
         <Header />
       </MemoryRouter>,
     );
 
-    // Login is a plain <Link>, so role="link" works.
-    expect(screen.getByRole("link", { name: "Login" })).toBeInTheDocument();
-
-    // Registrieren is a styled Button rendering a <Link>; Base UI may
-    // expose it as either role. getByText is robust either way; verify
-    // it's wrapped in an <a> pointing to /signup.
-    const register = screen.getByText("Registrieren");
-    const anchor = register.closest("a");
-    expect(anchor).not.toBeNull();
-    expect(anchor).toHaveAttribute("href", "/signup");
+    // Login / Registrieren now live in the footer, not the header.
+    expect(screen.queryByRole("link", { name: "Login" })).not.toBeInTheDocument();
+    expect(screen.queryByText("Registrieren")).not.toBeInTheDocument();
   });
 
-  it("shows the profile avatar link (no header Logout) when logged in", () => {
+  it("shows no profile link in the header when logged in (it moved to the footer)", () => {
     mockUseAuth.mockReturnValue({
       user: {
         id: "user-1",
@@ -99,22 +92,18 @@ describe("Header", () => {
       </MemoryRouter>,
     );
 
-    // Profile is now an avatar link to /profile labelled "Mein Profil".
-    const profileLink = screen.getByRole("link", { name: "Mein Profil" });
-    expect(profileLink).toBeInTheDocument();
-    expect(profileLink).toHaveAttribute("href", "/profile");
+    // The profile link now lives in the footer, not the header.
+    expect(
+      screen.queryByRole("link", { name: "Mein Profil" }),
+    ).not.toBeInTheDocument();
 
     // A plain USER does not see the EDITOR-only Admin link.
     expect(screen.queryByRole("link", { name: "Admin" })).not.toBeInTheDocument();
 
-    // Logout moved to the profile page — it is NOT in the header anymore.
+    // Logout lives on the profile page — never in the header.
     expect(
       screen.queryByRole("button", { name: "Logout" }),
     ).not.toBeInTheDocument();
-
-    // Logged-out controls should be gone.
-    expect(screen.queryByRole("link", { name: "Login" })).not.toBeInTheDocument();
-    expect(screen.queryByText("Registrieren")).not.toBeInTheDocument();
   });
 
   it("does not show Kontakt in the header nav (it moved to the footer)", () => {

@@ -42,7 +42,7 @@ beforeEach(() => {
 });
 
 describe("Profile", () => {
-  it("renders account info, the edit form, and a Logout button", () => {
+  it("renders account info and a Logout button; the edit form is hidden until opened", async () => {
     render(
       <MemoryRouter>
         <Profile />
@@ -53,8 +53,16 @@ describe("Profile", () => {
       screen.getByRole("heading", { name: "Mein Profil" }),
     ).toBeInTheDocument();
     expect(screen.getByText("test@example.com")).toBeInTheDocument();
-    expect(screen.getByLabelText("Anzeigename")).toHaveValue("Testuser");
     expect(screen.getByRole("button", { name: "Logout" })).toBeInTheDocument();
+
+    // Edit form is collapsed by default.
+    expect(screen.queryByLabelText("Anzeigename")).not.toBeInTheDocument();
+
+    // Clicking "Profil bearbeiten" reveals it.
+    await userEvent.click(
+      screen.getByRole("button", { name: "Profil bearbeiten" }),
+    );
+    expect(screen.getByLabelText("Anzeigename")).toHaveValue("Testuser");
   });
 
   it("calls logout when the Logout button is clicked", async () => {
@@ -81,6 +89,9 @@ describe("Profile", () => {
       </MemoryRouter>,
     );
 
+    await userEvent.click(
+      screen.getByRole("button", { name: "Profil bearbeiten" }),
+    );
     const nameInput = screen.getByLabelText("Anzeigename");
     await userEvent.clear(nameInput);
     await userEvent.type(nameInput, "Neuer Name");
@@ -101,6 +112,9 @@ describe("Profile", () => {
       </MemoryRouter>,
     );
 
+    await userEvent.click(
+      screen.getByRole("button", { name: "Profil bearbeiten" }),
+    );
     await userEvent.type(
       screen.getByLabelText("Aktuelles Passwort"),
       "oldpassword1",
