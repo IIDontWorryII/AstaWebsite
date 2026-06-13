@@ -9,14 +9,17 @@
 //   caption  → holder's name
 //   email    → contact
 
+import { useState } from "react";
 import { Mail, Users } from "lucide-react";
 import type { PageSectionDTO } from "../../../../shared/types";
+import ImageLightbox from "@/components/ImageLightbox";
 
 interface ReferatCardProps {
   section: PageSectionDTO;
 }
 
 export default function ReferatCard({ section }: ReferatCardProps) {
+  const [zoom, setZoom] = useState<string | null>(null);
   return (
     <article className="rounded-2xl border border-gray-200 bg-white shadow-sm p-6 md:p-8 grid md:grid-cols-[1fr_260px] gap-8 items-start">
       {/* Left: role + description */}
@@ -37,13 +40,20 @@ export default function ReferatCard({ section }: ReferatCardProps) {
       {/* Right: portrait person card */}
       <div className="rounded-xl border border-gray-200 p-5 text-center">
         {section.imageUrl ? (
-          <img
-            src={section.imageUrl}
-            alt={section.caption ?? section.subtitle ?? "Referat"}
-            loading="lazy"
-            decoding="async"
-            className="w-28 h-28 rounded-full object-cover mx-auto"
-          />
+          <button
+            type="button"
+            onClick={() => setZoom(section.imageUrl)}
+            className="block mx-auto cursor-pointer"
+            aria-label="Foto vergrößern"
+          >
+            <img
+              src={section.imageUrl}
+              alt={section.caption ?? section.subtitle ?? "Referat"}
+              loading="lazy"
+              decoding="async"
+              className="w-28 h-28 rounded-full object-cover hover:opacity-90 transition-opacity"
+            />
+          </button>
         ) : (
           <div className="w-28 h-28 rounded-full bg-asta-red/10 mx-auto" aria-hidden />
         )}
@@ -66,6 +76,12 @@ export default function ReferatCard({ section }: ReferatCardProps) {
           </a>
         )}
       </div>
+
+      <ImageLightbox
+        src={zoom}
+        alt={section.caption ?? section.subtitle ?? "Referat"}
+        onClose={() => setZoom(null)}
+      />
     </article>
   );
 }

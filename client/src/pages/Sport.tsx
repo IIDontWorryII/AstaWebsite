@@ -11,11 +11,11 @@ import Band from "@/components/Band";
 import SectionHeader from "@/components/SectionHeader";
 import InfoSection from "@/components/gremien/InfoSection";
 import MenuCard from "@/components/gremien/MenuCard";
-import GalleryCard from "@/components/gremien/GalleryCard";
+import GalleryCarousel from "@/components/GalleryCarousel";
 import UpcomingEvents from "@/components/UpcomingEvents";
 
 // Placeholder hero until a dedicated sport photo is added to client/public.
-const HERO_IMAGE = "/sport-hero.jpeg";
+const HERO_IMAGE = "/sport-hero.webp";
 
 export default function Sport() {
   const [page, setPage] = useState<PageDTO | null>(null);
@@ -82,11 +82,7 @@ export default function Sport() {
       {gallery.length > 0 && (
         <Band id="galerie" alt>
           <SectionHeader title="Galerie" />
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {gallery.map((g) => (
-              <GalleryCard key={g.id} section={g} />
-            ))}
-          </div>
+          <GalleryCarousel items={gallery} />
         </Band>
       )}
     </div>
