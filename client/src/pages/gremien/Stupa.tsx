@@ -53,7 +53,7 @@ export default function Stupa() {
 
       {info && (
         <Band id="info">
-          <InfoSection section={info} title="Über das StuPa" altText="StuPa-Team" />
+          <InfoSection section={info} title="Über das StuPa" textOnly />
         </Band>
       )}
 

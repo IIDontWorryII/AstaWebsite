@@ -15,7 +15,7 @@ import GalleryCard from "@/components/gremien/GalleryCard";
 import UpcomingEvents from "@/components/UpcomingEvents";
 
 // Placeholder hero until a dedicated sport photo is added to client/public.
-const HERO_IMAGE = "/campus-photo.jpg";
+const HERO_IMAGE = "/sport-hero.jpeg";
 
 export default function Sport() {
   const [page, setPage] = useState<PageDTO | null>(null);

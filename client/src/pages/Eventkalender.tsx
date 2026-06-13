@@ -131,9 +131,9 @@ export default function Eventkalender() {
       {/* Hero */}
       <PageHero
         image="/eventcalender-hero.jpg"
-        logo=""
         title="Eventcalender"
         subtitle="Entdecke folgende Veranstaltungen des AStA Remagen"
+        compact
       />
 
       <div className="max-w-7xl mx-auto px-6 py-8">

@@ -49,7 +49,6 @@ export default function Baracke() {
     <div>
       <PageHero
         image={page.heroImageUrl ?? "/Baracke-photo1.jpg"}
-        logo="/baracke-logo.png"
         title="BaRACke"
         subtitle="Die studentische Kneipe des RheinAhrCampus"
       />

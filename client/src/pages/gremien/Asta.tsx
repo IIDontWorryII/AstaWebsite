@@ -46,14 +46,18 @@ export default function Asta() {
     <div>
       <PageHero
         image={page.heroImageUrl ?? "/asta-hero.webp"}
-        logo="/asta-logo.png"
         title="AStA"
         subtitle="Allgemeiner Studierendenausschuss"
       />
 
       {info && (
         <Band id="info">
-          <InfoSection section={info} title="Über den AStA" altText="AStA-Team" />
+          <InfoSection
+            section={info}
+            title="Über den AStA"
+            logo="/asta-logo.png"
+            textOnly
+          />
         </Band>
       )}
 

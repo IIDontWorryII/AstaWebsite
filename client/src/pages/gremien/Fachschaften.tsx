@@ -65,7 +65,7 @@ export default function Fachschaften() {
 
       {info && (
         <Band id="info">
-          <InfoSection section={info} title="Über die Fachschaften" />
+          <InfoSection section={info} title="Über die Fachschaften" textOnly />
         </Band>
       )}
 
