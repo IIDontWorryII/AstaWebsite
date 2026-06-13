@@ -95,7 +95,7 @@ export default function Eventkalender() {
           : new Date(e.startsAt).getTime() < now,
       )
       .filter((e) => (q ? e.title.toLowerCase().includes(q) : true))
-      .filter((e) => (category ? e.category === category : true))
+      .filter((e) => (category ? e.categories.includes(category) : true))
       .filter((e) => (place ? e.place === place : true))
       .filter((e) =>
         month ? new Date(e.startsAt).getMonth() === Number(month) : true,

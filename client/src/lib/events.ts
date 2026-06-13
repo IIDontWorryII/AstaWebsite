@@ -17,7 +17,7 @@ export function selectUpcoming(
 ): EventDTO[] {
   const { category, limit, now = Date.now() } = opts;
   const list = events
-    .filter((e) => (category ? e.category === category : true))
+    .filter((e) => (category ? e.categories.includes(category) : true))
     .filter((e) => new Date(e.startsAt).getTime() >= now)
     .sort(
       (a, b) =>

@@ -22,8 +22,8 @@ export interface EventFormInput {
   /** ISO 8601 string. UI uses datetime-local; convert with new Date(value).toISOString(). */
   startsAt: string;
   price?: string;
-  /** One of EVENT_CATEGORIES' values, or "" for none. */
-  category?: string;
+  /** Referate tags (EVENT_CATEGORIES values). Empty array = untagged. */
+  categories?: string[];
   /** Email for registration; "" = no registration required. */
   registrationEmail?: string;
 }
@@ -39,7 +39,14 @@ async function buildFormData(
 ): Promise<FormData> {
   const fd = new FormData();
   for (const [key, value] of Object.entries(input)) {
-    if (value !== undefined && value !== null) fd.append(key, String(value));
+    if (value === undefined || value === null) continue;
+    // Arrays (categories) can't be stringified field-by-field — send them as a
+    // JSON string the server parses back into a string[].
+    if (Array.isArray(value)) {
+      fd.append(key, JSON.stringify(value));
+    } else {
+      fd.append(key, String(value));
+    }
   }
   // Downscale/compress large photos before they go on the wire.
   if (image) fd.append("image", await compressImage(image));

@@ -16,7 +16,7 @@ const event: EventDTO = {
   imageUrl: null,
   price: null,
   place: "Campus",
-  category: null,
+  categories: [],
   registrationEmail: null,
   startsAt: new Date(Date.now() + 86_400_000).toISOString(),
   createdAt: new Date().toISOString(),

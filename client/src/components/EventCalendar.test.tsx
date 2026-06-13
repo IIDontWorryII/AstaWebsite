@@ -18,7 +18,7 @@ const event: EventDTO = {
   imageUrl: "/cal.jpg",
   price: null,
   place: "Campus",
-  category: null,
+  categories: [],
   registrationEmail: null,
   startsAt: new Date(today.getFullYear(), today.getMonth(), 15, 18, 0).toISOString(),
   createdAt: new Date().toISOString(),

@@ -69,10 +69,22 @@ export default function EventForm({ event }: EventFormProps) {
     event ? isoToDatetimeLocalValue(event.startsAt) : "",
   );
   const [price, setPrice] = useState(event?.price ?? "");
-  const [category, setCategory] = useState(event?.category ?? "");
+  // Multi-select referat tags. Start from the event's tags in edit mode.
+  const [categories, setCategories] = useState<string[]>(
+    event?.categories ?? [],
+  );
   const [registrationEmail, setRegistrationEmail] = useState(
     event?.registrationEmail ?? "",
   );
+
+  /** Add/remove a referat tag from the selection. */
+  function toggleCategory(value: string) {
+    setCategories((prev) =>
+      prev.includes(value)
+        ? prev.filter((c) => c !== value)
+        : [...prev, value],
+    );
+  }
 
   // ─── File state ───
   // `file` is the newly-selected File (or null if none picked yet).
@@ -126,8 +138,8 @@ export default function EventForm({ event }: EventFormProps) {
         startsAt: datetimeLocalValueToISO(startsAt),
         // Empty price string → undefined so we don't send "" to the server.
         price: price.trim() === "" ? undefined : price,
-        // "" is allowed — the server reads it as "no category".
-        category,
+        // Selected referate (possibly empty → untagged).
+        categories,
         // "" = no registration required.
         registrationEmail: registrationEmail.trim(),
       };
@@ -152,206 +164,241 @@ export default function EventForm({ event }: EventFormProps) {
   const imageToShow = previewUrl ?? (isEdit ? event!.imageUrl : null);
 
   return (
-    <section className="max-w-2xl mx-auto px-6 py-12">
+    <section className="max-w-5xl mx-auto px-6 py-12">
       <h1 className="text-3xl font-bold mb-8">
         {isEdit ? "Event bearbeiten" : "Neues Event"}
       </h1>
 
-      <form onSubmit={handleSubmit} className="space-y-5">
-        <div>
-          <label htmlFor="title" className="block text-sm font-semibold mb-1">
-            Titel
-          </label>
-          <input
-            id="title"
-            type="text"
-            required
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            className="w-full border border-gray-300 rounded px-3 py-2"
-          />
-        </div>
-
-        <div>
-          <label
-            htmlFor="description"
-            className="block text-sm font-semibold mb-1"
-          >
-            Beschreibung
-          </label>
-          <textarea
-            id="description"
-            required
-            rows={4}
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            className="w-full border border-gray-300 rounded px-3 py-2"
-          />
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {/* Two columns: all the text/details on the LEFT, the poster preview +
+          upload + actions on the RIGHT. The right column is sticky so the
+          editor can keep an eye on how the poster looks while editing. */}
+      <form
+        onSubmit={handleSubmit}
+        className="grid gap-8 md:grid-cols-[1.5fr_1fr] items-start"
+      >
+        {/* ─── Left: details ─── */}
+        <div className="space-y-5">
           <div>
-            <label htmlFor="place" className="block text-sm font-semibold mb-1">
-              Ort
+            <label htmlFor="title" className="block text-sm font-semibold mb-1">
+              Titel
             </label>
             <input
-              id="place"
+              id="title"
               type="text"
               required
-              value={place}
-              onChange={(e) => setPlace(e.target.value)}
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
               className="w-full border border-gray-300 rounded px-3 py-2"
             />
           </div>
 
           <div>
             <label
-              htmlFor="startsAt"
+              htmlFor="description"
               className="block text-sm font-semibold mb-1"
             >
-              Datum & Uhrzeit
+              Beschreibung
             </label>
-            <input
-              id="startsAt"
-              type="datetime-local"
+            <textarea
+              id="description"
               required
-              value={startsAt}
-              onChange={(e) => setStartsAt(e.target.value)}
+              rows={6}
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
               className="w-full border border-gray-300 rounded px-3 py-2"
             />
           </div>
-        </div>
 
-        <div>
-          <label htmlFor="price" className="block text-sm font-semibold mb-1">
-            Preis <span className="text-gray-500 font-normal">(optional)</span>
-          </label>
-          <input
-            id="price"
-            type="text"
-            placeholder="z.B. 5€ oder Frei"
-            value={price}
-            onChange={(e) => setPrice(e.target.value)}
-            className="w-full border border-gray-300 rounded px-3 py-2"
-          />
-        </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label
+                htmlFor="place"
+                className="block text-sm font-semibold mb-1"
+              >
+                Ort
+              </label>
+              <input
+                id="place"
+                type="text"
+                required
+                value={place}
+                onChange={(e) => setPlace(e.target.value)}
+                className="w-full border border-gray-300 rounded px-3 py-2"
+              />
+            </div>
 
-        <div>
-          <label htmlFor="category" className="block text-sm font-semibold mb-1">
-            Kategorie / Referat{" "}
-            <span className="text-gray-500 font-normal">(optional)</span>
-          </label>
-          <select
-            id="category"
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-            className="w-full border border-gray-300 rounded px-3 py-2 bg-white"
-          >
-            <option value="">— keine —</option>
-            {EVENT_CATEGORIES.map((c) => (
-              <option key={c.value} value={c.value}>
-                {c.label}
-              </option>
-            ))}
-          </select>
-          <p className="text-xs text-gray-500 mt-1">
-            Bestimmt, auf welcher Referat-Seite das Event in „Bevorstehende
-            Events“ erscheint.
-          </p>
-        </div>
+            <div>
+              <label
+                htmlFor="startsAt"
+                className="block text-sm font-semibold mb-1"
+              >
+                Datum & Uhrzeit
+              </label>
+              <input
+                id="startsAt"
+                type="datetime-local"
+                required
+                value={startsAt}
+                onChange={(e) => setStartsAt(e.target.value)}
+                className="w-full border border-gray-300 rounded px-3 py-2"
+              />
+            </div>
+          </div>
 
-        <div>
-          <label
-            htmlFor="registrationEmail"
-            className="block text-sm font-semibold mb-1"
-          >
-            Anmeldung per E-Mail{" "}
-            <span className="text-gray-500 font-normal">(optional)</span>
-          </label>
-          <input
-            id="registrationEmail"
-            type="email"
-            placeholder="z.B. rac-asta-vorsitz@rheinahrcampus.de"
-            value={registrationEmail}
-            onChange={(e) => setRegistrationEmail(e.target.value)}
-            className="w-full border border-gray-300 rounded px-3 py-2"
-          />
-          <p className="text-xs text-gray-500 mt-1">
-            Wenn gesetzt, zeigt das Event einen „Sich anmelden“-Button, der eine
-            E-Mail an diese Adresse öffnet.
-          </p>
-        </div>
-
-        <div>
-          <label htmlFor="image" className="block text-sm font-semibold mb-1">
-            Bild{" "}
-            <span className="text-gray-500 font-normal">
-              (PNG / JPEG / WebP, max. 20 MB)
-            </span>
-          </label>
-          <input
-            id="image"
-            ref={fileInputRef}
-            type="file"
-            accept="image/png,image/jpeg,image/webp"
-            onChange={handleFileChange}
-            className="block w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-gray-100 file:cursor-pointer hover:file:bg-gray-200"
-          />
-          {file && (
-            <button
-              type="button"
-              onClick={clearSelectedFile}
-              className="text-xs text-asta-red mt-1 cursor-pointer hover:underline"
-            >
-              Neue Datei verwerfen
-            </button>
-          )}
-        </div>
-
-        {imageToShow && (
           <div>
-            <p className="text-sm font-semibold mb-1">Vorschau</p>
-            <img
-              src={imageToShow}
-              alt="Event-Poster Vorschau"
-              className="max-h-64 rounded border border-gray-200"
+            <label htmlFor="price" className="block text-sm font-semibold mb-1">
+              Preis{" "}
+              <span className="text-gray-500 font-normal">(optional)</span>
+            </label>
+            <input
+              id="price"
+              type="text"
+              placeholder="z.B. 5€ oder Frei"
+              value={price}
+              onChange={(e) => setPrice(e.target.value)}
+              className="w-full border border-gray-300 rounded px-3 py-2"
             />
-            {isEdit && !file && (
+          </div>
+
+          {/* Referate: multiple allowed — an event can be co-organized. */}
+          <fieldset>
+            <legend className="block text-sm font-semibold mb-1">
+              Referate{" "}
+              <span className="text-gray-500 font-normal">
+                (mehrere möglich, optional)
+              </span>
+            </legend>
+            <div className="flex flex-wrap gap-2">
+              {EVENT_CATEGORIES.map((c) => {
+                const selected = categories.includes(c.value);
+                return (
+                  <label
+                    key={c.value}
+                    className={`cursor-pointer select-none rounded-full border px-3 py-1.5 text-sm ${
+                      selected
+                        ? "bg-asta-red text-white border-asta-red"
+                        : "bg-white text-gray-700 border-gray-300 hover:border-asta-red"
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      className="sr-only"
+                      checked={selected}
+                      onChange={() => toggleCategory(c.value)}
+                    />
+                    {c.label}
+                  </label>
+                );
+              })}
+            </div>
+            <p className="text-xs text-gray-500 mt-1">
+              Bestimmt, auf welchen Referat-Seiten das Event in „Bevorstehende
+              Events“ erscheint.
+            </p>
+          </fieldset>
+
+          <div>
+            <label
+              htmlFor="registrationEmail"
+              className="block text-sm font-semibold mb-1"
+            >
+              Anmeldung per E-Mail{" "}
+              <span className="text-gray-500 font-normal">(optional)</span>
+            </label>
+            <input
+              id="registrationEmail"
+              type="email"
+              placeholder="z.B. rac-asta-vorsitz@rheinahrcampus.de"
+              value={registrationEmail}
+              onChange={(e) => setRegistrationEmail(e.target.value)}
+              className="w-full border border-gray-300 rounded px-3 py-2"
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Wenn gesetzt, zeigt das Event einen „Sich anmelden“-Button, der
+              eine E-Mail an diese Adresse öffnet.
+            </p>
+          </div>
+        </div>
+
+        {/* ─── Right: poster preview + upload + actions ─── */}
+        <div className="space-y-4 md:sticky md:top-24">
+          {/* Large preview in the same 4:5 frame the public cards/popup use,
+              so the editor sees exactly how the poster will be displayed. */}
+          <div>
+            <p className="text-sm font-semibold mb-1">Poster-Vorschau</p>
+            {imageToShow ? (
+              <img
+                src={imageToShow}
+                alt="Event-Poster Vorschau"
+                className="w-full aspect-[4/5] object-contain rounded-lg border border-gray-200 bg-gray-100"
+              />
+            ) : (
+              <div className="w-full aspect-[4/5] grid place-items-center rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 text-gray-400 text-sm">
+                Noch kein Bild
+              </div>
+            )}
+            {isEdit && imageToShow && !file && (
               <p className="text-xs text-gray-500 mt-1">
-                Aktuelles Bild. Wähle eine neue Datei, um es zu ersetzen.
+                Aktuelles Bild. Lade ein neues hoch, um es zu ersetzen.
               </p>
             )}
           </div>
-        )}
 
-        {error && (
-          <p className="text-red-600 text-sm" role="alert">
-            Fehler: {error}
-          </p>
-        )}
+          <div>
+            <label htmlFor="image" className="sr-only">
+              Bild hochladen
+            </label>
+            <input
+              id="image"
+              ref={fileInputRef}
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              onChange={handleFileChange}
+              className="block w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-gray-100 file:cursor-pointer hover:file:bg-gray-200"
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              PNG / JPEG / WebP, max. 20 MB.
+            </p>
+            {file && (
+              <button
+                type="button"
+                onClick={clearSelectedFile}
+                className="text-xs text-asta-red mt-1 cursor-pointer hover:underline"
+              >
+                Neue Datei verwerfen
+              </button>
+            )}
+          </div>
 
-        <div className="flex gap-3 pt-2">
-          <Button
-            type="submit"
-            disabled={submitting}
-            size="lg"
-            className="cursor-pointer"
-          >
-            {submitting
-              ? "Speichert…"
-              : isEdit
-                ? "Speichern"
-                : "Event erstellen"}
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            size="lg"
-            onClick={() => navigate("/admin/events")}
-            className="cursor-pointer"
-          >
-            Abbrechen
-          </Button>
+          {error && (
+            <p className="text-red-600 text-sm" role="alert">
+              Fehler: {error}
+            </p>
+          )}
+
+          <div className="flex flex-col gap-3 pt-2">
+            <Button
+              type="submit"
+              disabled={submitting}
+              size="lg"
+              className="cursor-pointer"
+            >
+              {submitting
+                ? "Speichert…"
+                : isEdit
+                  ? "Speichern"
+                  : "Event erstellen"}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="lg"
+              onClick={() => navigate("/admin/events")}
+              className="cursor-pointer"
+            >
+              Abbrechen
+            </Button>
+          </div>
         </div>
       </form>
     </section>

@@ -38,11 +38,12 @@ model Event {
   imageUrl    String?
   price       String?
   place       String
-  // Which group/referat the event belongs to (BARACKE, EVENT, SPORT,
-  // FS_WISO, FS_MIT). Drives the per-referat "upcoming events" sections.
-  // Free string validated app-side (see shared/types EVENT_CATEGORIES) so
-  // new referate don't require a migration. Nullable for legacy rows.
-  category    String?
+  // Which groups/referate the event belongs to (BARACKE, EVENT, SPORT,
+  // FS_WISO, FS_MIT). An event can be tagged with several at once (parties are
+  // often co-organized), so it's a string array. Values are validated app-side
+  // (see shared/types EVENT_CATEGORIES) so new referate don't require a
+  // migration. Empty array = untagged.
+  categories  String[]   @default([])
   // If set, the event requires registration by email — the public detail
   // popup shows a "Sich anmelden" button linking to this address.
   registrationEmail String?

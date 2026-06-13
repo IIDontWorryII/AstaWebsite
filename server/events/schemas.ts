@@ -14,6 +14,27 @@ const CATEGORY_VALUES = EVENT_CATEGORIES.map((c) => c.value) as [
   ...string[],
 ];
 
+/**
+ * Referate tags. Multipart form fields are text, so the client sends the
+ * selection as a JSON array string (e.g. '["SPORT","EVENT"]'). We parse that
+ * here, tolerate an empty string / missing field (→ []), then validate every
+ * entry against the allowed values.
+ */
+const categoriesField = z.preprocess((val) => {
+  if (val === undefined || val === null) return undefined;
+  if (Array.isArray(val)) return val;
+  if (typeof val === "string") {
+    const trimmed = val.trim();
+    if (trimmed === "") return [];
+    try {
+      return JSON.parse(trimmed);
+    } catch {
+      return val; // let the validator reject it with a clear error
+    }
+  }
+  return val;
+}, z.array(z.enum(CATEGORY_VALUES)).optional());
+
 /** Required fields for creating an event. Image is handled separately via multer. */
 export const EventCreateInput = z.object({
   title: z.string().min(1, "Title is required"),
@@ -22,8 +43,8 @@ export const EventCreateInput = z.object({
   // ISO 8601 timestamp string — the client should send `new Date().toISOString()`.
   startsAt: z.string().datetime("startsAt must be an ISO 8601 timestamp"),
   price: z.string().optional(),
-  // Optional referat/group tag. Empty string is treated as "no category".
-  category: z.enum(CATEGORY_VALUES).optional().or(z.literal("")),
+  // Optional referat/group tags. Omitted/empty → undefined (treated as []).
+  categories: categoriesField,
   // Optional registration email. Empty string clears it.
   registrationEmail: z.string().email().optional().or(z.literal("")),
 });

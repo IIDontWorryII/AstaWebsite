@@ -129,7 +129,7 @@ describe("POST /api/events", () => {
     expect(mockUpload).not.toHaveBeenCalled();
   });
 
-  it("stores a valid category and rejects an invalid one", async () => {
+  it("stores multiple valid categories and rejects an invalid one", async () => {
     const title = uniqueTitle("create-category");
     const ok = await editorAgent
       .post("/api/events")
@@ -137,9 +137,10 @@ describe("POST /api/events", () => {
       .field("description", "Description")
       .field("place", "Sporthalle")
       .field("startsAt", "2026-12-01T18:00:00.000Z")
-      .field("category", "SPORT");
+      // Categories ride along as a JSON array string (multipart fields are text).
+      .field("categories", JSON.stringify(["SPORT", "EVENT"]));
     expect(ok.status).toBe(201);
-    expect(ok.body.category).toBe("SPORT");
+    expect(ok.body.categories).toEqual(["SPORT", "EVENT"]);
 
     const bad = await editorAgent
       .post("/api/events")
@@ -147,7 +148,7 @@ describe("POST /api/events", () => {
       .field("description", "Description")
       .field("place", "Campus")
       .field("startsAt", "2026-12-01T18:00:00.000Z")
-      .field("category", "NOT_A_REAL_CATEGORY");
+      .field("categories", JSON.stringify(["NOT_A_REAL_CATEGORY"]));
     expect(bad.status).toBe(400);
   });
 

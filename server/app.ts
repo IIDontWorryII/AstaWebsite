@@ -114,7 +114,7 @@ app.post(
         place: data.place,
         startsAt: new Date(data.startsAt),
         price: data.price ?? null,
-        category: data.category ? data.category : null,
+        categories: data.categories ?? [],
         registrationEmail: data.registrationEmail ? data.registrationEmail : null,
         imageUrl,
       },
@@ -161,7 +161,7 @@ app.put(
       place?: string;
       startsAt?: Date;
       price?: string | null;
-      category?: string | null;
+      categories?: string[];
       registrationEmail?: string | null;
       imageUrl?: string | null;
     } = {};
@@ -170,9 +170,9 @@ app.put(
     if (data.place !== undefined) updatePayload.place = data.place;
     if (data.startsAt !== undefined) updatePayload.startsAt = new Date(data.startsAt);
     if (data.price !== undefined) updatePayload.price = data.price;
-    // Empty string clears the category (set null); a real value sets it.
-    if (data.category !== undefined)
-      updatePayload.category = data.category ? data.category : null;
+    // An empty array clears all tags; a non-empty array replaces them.
+    if (data.categories !== undefined)
+      updatePayload.categories = data.categories;
     // Empty string clears the registration email.
     if (data.registrationEmail !== undefined)
       updatePayload.registrationEmail = data.registrationEmail

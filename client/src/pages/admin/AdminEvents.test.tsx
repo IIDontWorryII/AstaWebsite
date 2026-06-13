@@ -50,7 +50,7 @@ const baseEvent: EventDTO = {
   imageUrl: null,
   price: null,
   place: "Campus",
-  category: null,
+  categories: [],
   registrationEmail: null,
   // Future date so it shows under the default "Aktiv" filter.
   startsAt: new Date(Date.now() + 30 * 86_400_000).toISOString(),

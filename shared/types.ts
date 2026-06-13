@@ -58,8 +58,12 @@ export interface EventDTO {
   imageUrl: string | null;
   price: string | null;
   place: string;
-  /** One of EVENT_CATEGORIES' values, or null for untagged events. */
-  category: string | null;
+  /**
+   * Referate/groups this event belongs to (EVENT_CATEGORIES values). An event
+   * can be organized by several Referate at once, so this is a list. Empty
+   * array = untagged.
+   */
+  categories: string[];
   /** Email to register for the event, or null if no registration needed. */
   registrationEmail: string | null;
   startsAt: string;

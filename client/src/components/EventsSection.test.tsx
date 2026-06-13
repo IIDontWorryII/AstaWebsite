@@ -35,7 +35,7 @@ function makeEvent(over: Partial<EventDTO>): EventDTO {
     imageUrl: null,
     price: null,
     place: "Campus",
-    category: null,
+    categories: [],
     registrationEmail: null,
     startsAt: iso(3 * DAY),
     createdAt: iso(-DAY),
