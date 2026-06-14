@@ -16,8 +16,8 @@ interface InfoSectionProps {
   title?: string;
   /** Alt text for the image (default "Team"). */
   altText?: string;
-  /** Logo shown to the right of the heading. */
-  logo?: string;
+  /** Logo(s) shown to the right of the heading. Pass an array for several. */
+  logo?: string | string[];
   /** Hide the section image (the photo lives in the hero instead). */
   textOnly?: boolean;
 }
@@ -29,22 +29,33 @@ export default function InfoSection({
   logo,
   textOnly,
 }: InfoSectionProps) {
+  const logos = logo ? (Array.isArray(logo) ? logo : [logo]) : [];
+
   const heading = (
     <div className="flex items-start justify-between gap-6">
       <SectionHeader title={title} />
-      {logo && (
-        <img
-          src={logo}
-          alt=""
-          aria-hidden="true"
-          loading="lazy"
-          className="h-16 md:h-20 w-auto shrink-0"
-        />
+      {logos.length > 0 && (
+        // Stack multiple logos vertically (e.g. MIT above WiSo).
+        <div className="flex flex-col items-end gap-3 shrink-0">
+          {logos.map((src) => (
+            <img
+              key={src}
+              src={src}
+              alt=""
+              aria-hidden="true"
+              loading="lazy"
+              className="h-16 md:h-20 w-auto"
+            />
+          ))}
+        </div>
       )}
     </div>
   );
 
-  const showImage = !!section.imageUrl && !textOnly && !logo;
+  const showImage = !!section.imageUrl && !textOnly && logos.length === 0;
+  // Text-only intros span wider than reading-measure so they fill the band
+  // instead of stopping short next to the logos.
+  const bodyWidth = textOnly ? "max-w-4xl" : "max-w-prose";
 
   return (
     <div>
@@ -63,7 +74,9 @@ export default function InfoSection({
           </p>
         </div>
       ) : (
-        <p className="text-gray-700 whitespace-pre-line leading-relaxed max-w-prose">
+        <p
+          className={`text-gray-700 whitespace-pre-line leading-relaxed ${bodyWidth}`}
+        >
           {section.body}
         </p>
       )}
