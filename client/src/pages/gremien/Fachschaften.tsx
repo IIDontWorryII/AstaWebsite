@@ -11,6 +11,8 @@ import PageHero from "@/components/PageHero";
 import Band from "@/components/Band";
 import InfoSection from "@/components/gremien/InfoSection";
 import FreeformSection from "@/components/gremien/FreeformSection";
+import MemberCard from "@/components/gremien/MemberCard";
+import { facultyKey } from "@/lib/members";
 
 function slugify(input: string): string {
   return input
@@ -54,6 +56,17 @@ export default function Fachschaften() {
 
   const info = page.sections.find((s) => s.kind === "INFO");
   const freeforms = page.sections.filter((s) => s.kind === "FREEFORM");
+  const members = page.sections.filter((s) => s.kind === "MEMBER");
+
+  // Both Fachschaft logos sit next to the "Über die Fachschaften" heading
+  // (like the other gremien pages), derived from the FREEFORM headings.
+  const infoLogos = Array.from(
+    new Set(
+      freeforms
+        .map((f) => logoFor(f.subtitle))
+        .filter((l): l is string => !!l),
+    ),
+  );
 
   return (
     <div>
@@ -65,19 +78,40 @@ export default function Fachschaften() {
 
       {info && (
         <Band id="info">
-          <InfoSection section={info} title="Über die Fachschaften" textOnly />
+          <InfoSection
+            section={info}
+            title="Über die Fachschaften"
+            textOnly
+            logo={infoLogos}
+          />
         </Band>
       )}
 
-      {freeforms.map((s, i) => (
-        <Band key={s.id} id={slugify(s.subtitle ?? s.id)} alt={i % 2 === 0}>
-          <FreeformSection
-            section={s}
-            imageRight={i % 2 === 1}
-            logo={logoFor(s.subtitle)}
-          />
-        </Band>
-      ))}
+      {freeforms.map((s, i) => {
+        // Members tagged with this band's faculty (FS MIT / FS WiSo) become the
+        // band's second column, alternating sides so the page stays lively.
+        const bandFaculty = facultyKey(s.subtitle);
+        const bandMembers = bandFaculty
+          ? members.filter((m) => facultyKey(m.subtitle) === bandFaculty)
+          : [];
+        const memberGrid =
+          bandMembers.length > 0 ? (
+            <div className="grid grid-cols-3 gap-x-4 gap-y-8 justify-items-center">
+              {bandMembers.map((m) => (
+                <MemberCard key={m.id} section={m} hideSubtitle compact />
+              ))}
+            </div>
+          ) : undefined;
+        return (
+          <Band key={s.id} id={slugify(s.subtitle ?? s.id)} alt={i % 2 === 0}>
+            <FreeformSection
+              section={s}
+              imageRight={i % 2 === 1}
+              aside={memberGrid}
+            />
+          </Band>
+        );
+      })}
     </div>
   );
 }

@@ -34,6 +34,7 @@ const AdminGremien = lazy(() => import("./pages/admin/gremien/AdminGremien"));
 const AdminGremiumPage = lazy(
   () => import("./pages/admin/gremien/AdminGremiumPage"),
 );
+const AdminMembers = lazy(() => import("./pages/admin/AdminMembers"));
 
 function PageFallback() {
   return (
@@ -151,6 +152,16 @@ function App() {
             <RequireEditor>
               <Suspense fallback={<PageFallback />}>
                 <EditProtocol />
+              </Suspense>
+            </RequireEditor>
+          }
+        />
+        <Route
+          path="/admin/mitglieder"
+          element={
+            <RequireEditor>
+              <Suspense fallback={<PageFallback />}>
+                <AdminMembers />
               </Suspense>
             </RequireEditor>
           }

@@ -14,13 +14,27 @@ import ImageLightbox from "@/components/ImageLightbox";
 
 interface MemberCardProps {
   section: PageSectionDTO;
+  /**
+   * Hide the subtitle line. Fachschaft members store their faculty in the
+   * subtitle (for grouping), which would be redundant under a faculty heading.
+   */
+  hideSubtitle?: boolean;
+  /** Smaller card for tighter layouts (e.g. inside an alternating band). */
+  compact?: boolean;
 }
 
-export default function MemberCard({ section }: MemberCardProps) {
+export default function MemberCard({
+  section,
+  hideSubtitle,
+  compact,
+}: MemberCardProps) {
   const [zoom, setZoom] = useState<string | null>(null);
 
+  const cardWidth = compact ? "w-44" : "w-48";
+  const photoSize = compact ? "w-36 h-36" : "w-40 h-40";
+
   return (
-    <article className="flex flex-col items-center text-center w-48">
+    <article className={`flex flex-col items-center text-center ${cardWidth}`}>
       {section.imageUrl && (
         <button
           type="button"
@@ -33,14 +47,12 @@ export default function MemberCard({ section }: MemberCardProps) {
             alt={section.caption ?? section.subtitle ?? "Mitglied"}
             loading="lazy"
             decoding="async"
-            className="w-40 h-40 rounded-full object-cover hover:opacity-90 transition-opacity"
+            className={`${photoSize} rounded-full object-cover hover:opacity-90 transition-opacity`}
           />
         </button>
       )}
-      {section.caption && (
-        <p className="font-semibold mt-3">{section.caption}</p>
-      )}
-      {section.subtitle && (
+      {section.caption && <p className="font-semibold mt-3">{section.caption}</p>}
+      {section.subtitle && !hideSubtitle && (
         <p className="text-sm text-gray-600">{section.subtitle}</p>
       )}
 

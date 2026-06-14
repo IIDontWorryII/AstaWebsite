@@ -24,6 +24,12 @@ const CARDS = [
     image: "/asta-team.jpg",
   },
   {
+    to: "/admin/mitglieder",
+    title: "Mitglieder",
+    description: "Referate & Mitglieder von AStA, StuPa und Fachschaften pflegen.",
+    image: "/asta-team.jpg",
+  },
+  {
     to: "/admin/gremien",
     title: "Seiteninhalte",
     description: "AStA-, StuPa-, Fachschaften- und BaRACke-Seiten bearbeiten.",
