@@ -66,10 +66,17 @@ function renderSectionByKind(section: PageSectionDTO) {
 
 /** Kinds the editor can add/reorder/delete freely (multi-instance). */
 const REORDERABLE: ReadonlySet<PageSectionKind> = new Set([
-  "REFERAT",
-  "MEMBER",
   "MENU",
   "GALLERY",
+]);
+
+// REFERAT (AStA referate) and MEMBER (StuPa/Fachschaft people) are managed in
+// the dedicated "Mitglieder" tool (/admin/mitglieder), so we hide them here to
+// avoid a confusing second editor for the same data. The page-content editor
+// keeps INFO/FREEFORM/MITGLIEDER text and MENU/GALLERY images.
+const HIDDEN_KINDS: ReadonlySet<PageSectionKind> = new Set([
+  "REFERAT",
+  "MEMBER",
 ]);
 
 type AddConfig = {
@@ -87,22 +94,8 @@ type AddConfig = {
  * no add buttons (all their sections are singletons).
  */
 const ADD_CONFIG: Record<string, AddConfig[]> = {
-  asta: [
-    {
-      label: "+ Neues Referat hinzufügen",
-      kind: "REFERAT",
-      placeholder: "Neues Referat",
-      initial: { subtitle: "Neues Referat", body: "Beschreibung hier eintragen…" },
-    },
-  ],
-  stupa: [
-    {
-      label: "+ Neues Mitglied hinzufügen",
-      kind: "MEMBER",
-      placeholder: "Neues Mitglied",
-      initial: { subtitle: "Neues Mitglied", caption: "Name eintragen" },
-    },
-  ],
+  // NOTE: AStA referate and StuPa members are added in the "Mitglieder" tool
+  // (/admin/mitglieder), so this editor offers no "add Referat/Mitglied" button.
   baracke: [
     {
       label: "+ Menübild hinzufügen",
@@ -249,7 +242,9 @@ export default function AdminGremiumPage() {
       />
 
       <div className="space-y-6">
-        {page.sections.map((section) => (
+        {page.sections
+          .filter((section) => !HIDDEN_KINDS.has(section.kind))
+          .map((section) => (
           <EditableSection
             key={section.id}
             onEdit={() => setEditing(section)}
@@ -286,7 +281,8 @@ export default function AdminGremiumPage() {
       </div>
 
       {/* Pages with entries in ADD_CONFIG get "add new section" button(s).
-          ASTA → Referat, STUPA → Mitglied, BaRACke → Menü/Galerie. */}
+          BaRACke/Sport → Menü/Galerie. (AStA referate and StuPa members are
+          added in the Mitglieder tool, not here.) */}
       {addConfigs.length > 0 && (
         <div className="border-t border-gray-200 pt-6 flex flex-wrap gap-3">
           {addConfigs.map((cfg) => (

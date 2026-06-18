@@ -18,6 +18,30 @@ const mockDeleteSection = vi.fn();
 const mockMoveSection = vi.fn();
 const mockAddReferatSection = vi.fn();
 
+// The section body is edited with the rich-text editor (a contenteditable
+// ProseMirror widget). Swap it for a plain <textarea> honouring the same
+// value/onChange/ariaLabel contract so getByLabelText("Text") + fireEvent.change
+// still drive the real drawer logic.
+vi.mock("@/components/RichTextEditor", () => ({
+  default: ({
+    value,
+    onChange,
+    ariaLabel,
+  }: {
+    value: string;
+    onChange: (v: string) => void;
+    ariaLabel?: string;
+  }) => (
+    <textarea
+      aria-label={ariaLabel}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+    />
+  ),
+  isEmptyHtml: (html: string) =>
+    html.replace(/<[^>]*>/g, "").replace(/\s|&nbsp;/g, "") === "",
+}));
+
 vi.mock("@/lib/pages", async () => {
   const actual =
     await vi.importActual<typeof import("@/lib/pages")>("@/lib/pages");
@@ -125,26 +149,26 @@ describe("AdminGremiumPage", () => {
     mockFetchPage.mockResolvedValueOnce(astaPage);
 
     const updated: PageSectionDTO = {
-      ...referatSection,
-      body: "Updated body content for the chair.",
+      ...infoSection,
+      body: "Updated info text for the page.",
     };
     mockUpdateSection.mockResolvedValueOnce(updated);
 
     renderAt();
     await screen.findByRole("heading", { name: "AStA bearbeiten" });
 
-    // Click the REFERAT section's edit button (the second one).
+    // Only the INFO section is editable here (REFERAT is hidden), so its edit
+    // button is the only one.
     const editButtons = screen.getAllByTitle("Bearbeiten");
-    await userEvent.click(editButtons[1]);
+    expect(editButtons).toHaveLength(1);
+    await userEvent.click(editButtons[0]);
 
-    expect(
-      await screen.findByText("Referat bearbeiten"),
-    ).toBeInTheDocument();
+    expect(await screen.findByText("Info bearbeiten")).toBeInTheDocument();
 
     // Change the body field and save.
     const bodyField = screen.getByLabelText("Text") as HTMLTextAreaElement;
     fireEvent.change(bodyField, {
-      target: { value: "Updated body content for the chair." },
+      target: { value: "Updated info text for the page." },
     });
 
     await userEvent.click(screen.getByRole("button", { name: "Speichern" }));
