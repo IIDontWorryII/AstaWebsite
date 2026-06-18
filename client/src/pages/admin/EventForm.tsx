@@ -224,10 +224,18 @@ export default function EventForm({ event }: EventFormProps) {
                 id="place"
                 type="text"
                 required
+                list="place-suggestions"
                 value={place}
                 onChange={(e) => setPlace(e.target.value)}
                 className="w-full border border-gray-300 rounded px-3 py-2"
               />
+              {/* Common venues as suggestions; the field stays free-text so
+                  editors can still enter anything else ("Other"). */}
+              <datalist id="place-suggestions">
+                <option value="BaRACke" />
+                <option value="MBC" />
+                <option value="Recreation Area" />
+              </datalist>
             </div>
 
             <div>

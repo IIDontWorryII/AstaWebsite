@@ -314,8 +314,9 @@ function MemberCard({
 
   return (
     <div className="group relative rounded-2xl border border-gray-200 bg-white p-4 flex flex-col items-center text-center">
-      {/* Hover actions. */}
-      <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+      {/* Edit/delete actions — always visible so they're discoverable on
+          touch devices and at a glance (previously hover-only). */}
+      <div className="absolute top-2 right-2 flex gap-1">
         <button
           type="button"
           onClick={onEdit}
@@ -336,7 +337,7 @@ function MemberCard({
 
       {/* Reorder arrows (left side). */}
       {(onUp || onDown) && (
-        <div className="absolute top-2 left-2 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="absolute top-2 left-2 flex flex-col gap-1">
           {onUp && (
             <button
               type="button"

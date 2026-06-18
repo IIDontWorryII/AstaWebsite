@@ -21,7 +21,7 @@ const CARDS = [
     to: "/admin/protocols",
     title: "Protokolle",
     description: "Sitzungsprotokolle hochladen und verwalten.",
-    image: "/asta-team.jpg",
+    image: "/Protocols.png",
   },
   {
     to: "/admin/mitglieder",
@@ -47,7 +47,7 @@ export default function AdminDashboard() {
         </p>
       </header>
 
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
         {CARDS.map((card) => (
           <Link
             key={card.to}

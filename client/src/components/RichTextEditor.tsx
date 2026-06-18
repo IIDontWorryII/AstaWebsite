@@ -72,8 +72,10 @@ export default function RichTextEditor({
     onUpdate: ({ editor }) => onChange(editor.getHTML()),
     editorProps: {
       attributes: {
+        // `prose` defaults body text to a soft gray; override the typography
+        // colour variable so editors type in near-black for better contrast.
         class:
-          "prose prose-sm max-w-none focus:outline-none min-h-40 px-3 py-2",
+          "prose prose-sm max-w-none focus:outline-none min-h-40 px-3 py-2 [--tw-prose-body:var(--color-gray-900)]",
         ...(ariaLabel ? { "aria-label": ariaLabel } : {}),
       },
     },
