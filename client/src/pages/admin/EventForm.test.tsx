@@ -33,6 +33,30 @@ vi.mock("@/lib/admin-events", async () => {
   };
 });
 
+// The rich-text editor is a contenteditable (ProseMirror) widget that doesn't
+// play nicely with userEvent.type or .toHaveValue. Swap it for a plain
+// <textarea> that honours the same value/onChange/ariaLabel contract so the
+// form-level assertions below still exercise the real EventForm logic.
+vi.mock("@/components/RichTextEditor", () => ({
+  default: ({
+    value,
+    onChange,
+    ariaLabel,
+  }: {
+    value: string;
+    onChange: (v: string) => void;
+    ariaLabel?: string;
+  }) => (
+    <textarea
+      aria-label={ariaLabel}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+    />
+  ),
+  isEmptyHtml: (html: string) =>
+    html.replace(/<[^>]*>/g, "").replace(/\s|&nbsp;/g, "") === "",
+}));
+
 // Mock useNavigate so we can assert on the redirect without a real router stack.
 vi.mock("react-router-dom", async () => {
   const actual = await vi.importActual<typeof import("react-router-dom")>(

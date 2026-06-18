@@ -3,6 +3,10 @@
 @import "shadcn/tailwind.css";
 @import "@fontsource-variable/geist";
 
+/* Typography plugin: provides the `prose` classes used to render the admin
+   rich-text fields (page bodies, event descriptions) on the public pages. */
+@plugin "@tailwindcss/typography";
+
 @custom-variant dark (&:is(.dark *));
 
 /* Brand palette — extend Tailwind's default theme with AStA Remagen tokens.

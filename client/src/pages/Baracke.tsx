@@ -12,6 +12,7 @@ import PageHero from "@/components/PageHero";
 import Band from "@/components/Band";
 import SectionHeader from "@/components/SectionHeader";
 import InfoSection from "@/components/gremien/InfoSection";
+import RichText from "@/components/RichText";
 import MenuCard from "@/components/gremien/MenuCard";
 import GalleryCarousel from "@/components/GalleryCarousel";
 import UpcomingEvents from "@/components/UpcomingEvents";
@@ -26,11 +27,14 @@ function ContactItem({
   label,
   value,
   href,
+  html,
 }: {
   icon: ComponentType<{ className?: string }>;
   label: string;
   value: string;
   href?: string;
+  /** Render `value` as rich-text HTML (used for the editor-managed hours). */
+  html?: boolean;
 }) {
   const body = (
     <div className="flex items-start gap-3">
@@ -41,7 +45,14 @@ function ContactItem({
         <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
           {label}
         </p>
-        <p className="text-gray-800 whitespace-pre-line">{value}</p>
+        {html ? (
+          <RichText
+            html={value}
+            className="prose-sm prose-p:my-0 text-gray-800"
+          />
+        ) : (
+          <p className="text-gray-800 whitespace-pre-line">{value}</p>
+        )}
       </div>
     </div>
   );
@@ -105,7 +116,8 @@ export default function Baracke() {
           <ContactItem
             icon={Clock}
             label="Öffnungszeiten"
-            value={hours?.body || "Während der Vorlesungszeit"}
+            value={hours?.body || "<p>Während der Vorlesungszeit</p>"}
+            html
           />
           <ContactItem icon={MapPin} label="Ort" value={LOCATION} />
           <ContactItem

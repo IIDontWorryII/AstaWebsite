@@ -153,40 +153,47 @@ describe("AdminGremiumPage", () => {
       expect(mockUpdateSection).toHaveBeenCalledTimes(1);
     });
     const [id, input, file] = mockUpdateSection.mock.calls[0];
-    expect(id).toBe(referatSection.id);
-    expect(input.body).toBe("Updated body content for the chair.");
+    expect(id).toBe(infoSection.id);
+    expect(input.body).toBe("Updated info text for the page.");
     expect(file).toBeNull();
 
     // After save, the list should show the new body text.
     await waitFor(() => {
       expect(
-        screen.getByText(/Updated body content for the chair/),
+        screen.getByText(/Updated info text for the page/),
       ).toBeInTheDocument();
     });
   });
 
-  it("renders move-up/down arrows only on middle REFERAT sections", async () => {
-    // Build a page with TWO Referate so we can verify move-button gating.
-    const second: PageSectionDTO = {
+  it("hides REFERAT and MEMBER sections (managed in the Mitglieder tool)", async () => {
+    const memberSection: PageSectionDTO = {
       ...referatSection,
-      id: "section-finanz",
-      subtitle: "Finanzen",
-      body: "Finanz-Referat body",
-      order: 2,
+      id: "section-member",
+      kind: "MEMBER",
+      subtitle: "Präsident",
+      caption: "Max Mustermann",
+      body: null,
     };
     mockFetchPage.mockResolvedValueOnce({
       ...astaPage,
-      sections: [infoSection, referatSection, second],
+      sections: [infoSection, referatSection, memberSection],
     });
 
     renderAt();
     await screen.findByRole("heading", { name: "AStA bearbeiten" });
 
-    // First referat: should have "Move down" but NOT "Move up".
-    // Second referat: should have "Move up" but NOT "Move down".
-    const moveUps = screen.queryAllByTitle("Nach oben verschieben");
-    const moveDowns = screen.queryAllByTitle("Nach unten verschieben");
-    expect(moveUps).toHaveLength(1);
-    expect(moveDowns).toHaveLength(1);
+    // The REFERAT ("Vorsitz") and MEMBER ("Max Mustermann") sections are not
+    // rendered; only the INFO section is editable here.
+    expect(screen.queryByText("Vorsitz")).not.toBeInTheDocument();
+    expect(screen.queryByText("Max Mustermann")).not.toBeInTheDocument();
+    expect(screen.getAllByTitle("Bearbeiten")).toHaveLength(1);
+
+    // And there is no "add Referat/Mitglied" button on this page anymore.
+    expect(
+      screen.queryByRole("button", { name: /Referat hinzufügen/i }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /Mitglied hinzufügen/i }),
+    ).not.toBeInTheDocument();
   });
 });

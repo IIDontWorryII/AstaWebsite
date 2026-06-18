@@ -13,6 +13,7 @@ import { useState } from "react";
 import { Mail, Users } from "lucide-react";
 import type { PageSectionDTO } from "../../../../shared/types";
 import ImageLightbox from "@/components/ImageLightbox";
+import RichText from "@/components/RichText";
 
 interface ReferatCardProps {
   section: PageSectionDTO;
@@ -32,9 +33,10 @@ export default function ReferatCard({ section }: ReferatCardProps) {
             {section.subtitle}
           </h3>
         </div>
-        <p className="text-gray-700 leading-relaxed whitespace-pre-line max-w-prose">
-          {section.body}
-        </p>
+        <RichText
+          html={section.body ?? ""}
+          className="leading-relaxed max-w-prose"
+        />
       </div>
 
       {/* Right: portrait person card */}

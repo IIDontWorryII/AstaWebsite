@@ -27,6 +27,7 @@ import {
   DrawerTitle,
 } from "@/components/ui/drawer";
 import { updateSection } from "@/lib/pages";
+import RichTextEditor, { isEmptyHtml } from "@/components/RichTextEditor";
 
 interface SectionEditorDrawerProps {
   /** When set, the drawer is open and edits this section. */
@@ -163,7 +164,11 @@ export default function SectionEditorDrawer({
         email?: string;
       } = {};
       if (hasSubtitle(section.kind)) updates.subtitle = subtitle;
-      if (hasBody(section.kind)) updates.body = body;
+      // Rich-text body: an "empty" editor serializes to "<p></p>"; send "" so
+      // the server's required-body check reports it instead of storing a blank
+      // paragraph.
+      if (hasBody(section.kind))
+        updates.body = isEmptyHtml(body) ? "" : body;
       if (hasCaption(section.kind)) updates.caption = caption;
       if (hasEmail(section.kind)) updates.email = email;
 
@@ -233,19 +238,11 @@ export default function SectionEditorDrawer({
 
               {hasBody(section.kind) && (
                 <div>
-                  <label
-                    htmlFor="body"
-                    className="block text-sm font-semibold mb-1"
-                  >
-                    Text
-                  </label>
-                  <textarea
-                    id="body"
-                    rows={10}
-                    required
+                  <span className="block text-sm font-semibold mb-1">Text</span>
+                  <RichTextEditor
                     value={body}
-                    onChange={(e) => setBody(e.target.value)}
-                    className="w-full border border-gray-300 rounded px-3 py-2 font-sans"
+                    onChange={setBody}
+                    ariaLabel="Text"
                   />
                 </div>
               )}

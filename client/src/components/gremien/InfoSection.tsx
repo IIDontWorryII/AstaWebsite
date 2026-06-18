@@ -9,6 +9,7 @@
 
 import type { PageSectionDTO } from "../../../../shared/types";
 import SectionHeader from "@/components/SectionHeader";
+import RichText from "@/components/RichText";
 
 interface InfoSectionProps {
   section: PageSectionDTO;
@@ -69,16 +70,16 @@ export default function InfoSection({
             decoding="async"
             className="rounded-2xl w-full shadow-sm"
           />
-          <p className="text-gray-700 whitespace-pre-line leading-relaxed max-w-prose">
-            {section.body}
-          </p>
+          <RichText
+            html={section.body ?? ""}
+            className="leading-relaxed max-w-prose"
+          />
         </div>
       ) : (
-        <p
-          className={`text-gray-700 whitespace-pre-line leading-relaxed ${bodyWidth}`}
-        >
-          {section.body}
-        </p>
+        <RichText
+          html={section.body ?? ""}
+          className={`leading-relaxed ${bodyWidth}`}
+        />
       )}
     </div>
   );

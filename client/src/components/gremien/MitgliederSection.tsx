@@ -4,6 +4,7 @@
 // below. Subtitle from the section becomes the heading.
 
 import type { PageSectionDTO } from "../../../../shared/types";
+import RichText from "@/components/RichText";
 
 interface MitgliederSectionProps {
   section: PageSectionDTO;
@@ -28,7 +29,7 @@ export default function MitgliederSection({
           className="rounded-lg w-full mb-4"
         />
       )}
-      <p className="text-gray-700 whitespace-pre-line">{section.body}</p>
+      <RichText html={section.body ?? ""} />
     </section>
   );
 }

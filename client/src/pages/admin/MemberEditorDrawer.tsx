@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/drawer";
 import { addSection, updateSection } from "@/lib/pages";
 import { FACULTIES, initials, type MemberType } from "@/lib/members";
+import RichTextEditor, { isEmptyHtml } from "@/components/RichTextEditor";
 
 interface MemberEditorDrawerProps {
   open: boolean;
@@ -117,7 +118,9 @@ export default function MemberEditorDrawer({
       };
       if (isReferat) {
         fields.email = email;
-        if (body.trim() !== "") fields.body = body;
+        // body is optional here — only send it when the editor has content
+        // (an empty editor serializes to "<p></p>").
+        if (!isEmptyHtml(body)) fields.body = body;
       }
 
       if (mode === "new") {
@@ -239,15 +242,13 @@ export default function MemberEditorDrawer({
                   />
                 </div>
                 <div>
-                  <label htmlFor="m-body" className="block text-sm font-semibold mb-1">
+                  <span className="block text-sm font-semibold mb-1">
                     Beschreibung
-                  </label>
-                  <textarea
-                    id="m-body"
-                    rows={6}
+                  </span>
+                  <RichTextEditor
                     value={body}
-                    onChange={(e) => setBody(e.target.value)}
-                    className="w-full border border-gray-300 rounded px-3 py-2 font-sans"
+                    onChange={setBody}
+                    ariaLabel="Beschreibung"
                   />
                 </div>
               </>

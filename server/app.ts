@@ -49,6 +49,7 @@ import {
   PageSectionUpdateInput,
 } from "./pages/schemas.js";
 import { toPageDTO, toPageSectionDTO } from "./pages/dto.js";
+import { sanitizeRichText } from "./html/sanitize.js";
 import {
   deleteSectionImageByUrl,
   parseSectionImage,
@@ -110,7 +111,7 @@ app.post(
     const event = await prisma.event.create({
       data: {
         title: data.title,
-        description: data.description,
+        description: sanitizeRichText(data.description),
         place: data.place,
         startsAt: new Date(data.startsAt),
         price: data.price ?? null,
@@ -166,7 +167,8 @@ app.put(
       imageUrl?: string | null;
     } = {};
     if (data.title !== undefined) updatePayload.title = data.title;
-    if (data.description !== undefined) updatePayload.description = data.description;
+    if (data.description !== undefined)
+      updatePayload.description = sanitizeRichText(data.description);
     if (data.place !== undefined) updatePayload.place = data.place;
     if (data.startsAt !== undefined) updatePayload.startsAt = new Date(data.startsAt);
     if (data.price !== undefined) updatePayload.price = data.price;
@@ -705,7 +707,7 @@ app.put(
     if (data.subtitle !== undefined) {
       updatePayload.subtitle = data.subtitle === "" ? null : data.subtitle;
     }
-    if (data.body !== undefined) updatePayload.body = data.body;
+    if (data.body !== undefined) updatePayload.body = sanitizeRichText(data.body);
     if (data.caption !== undefined) {
       updatePayload.caption = data.caption === "" ? null : data.caption;
     }
@@ -778,7 +780,7 @@ app.post(
         order: nextOrder,
         kind: data.kind,
         subtitle: data.subtitle ?? null,
-        body: data.body ?? null,
+        body: data.body != null ? sanitizeRichText(data.body) : null,
         caption: data.caption ?? null,
         email: data.email ?? null,
       },

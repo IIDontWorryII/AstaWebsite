@@ -9,6 +9,7 @@
 import type { ReactNode } from "react";
 import type { PageSectionDTO } from "../../../../shared/types";
 import SectionHeader from "@/components/SectionHeader";
+import RichText from "@/components/RichText";
 
 interface FreeformSectionProps {
   section: PageSectionDTO;
@@ -30,9 +31,10 @@ export default function FreeformSection({
   aside,
 }: FreeformSectionProps) {
   const text = (
-    <p className="text-gray-700 whitespace-pre-line leading-relaxed max-w-prose">
-      {section.body}
-    </p>
+    <RichText
+      html={section.body ?? ""}
+      className="leading-relaxed max-w-prose"
+    />
   );
 
   const image = section.imageUrl ? (

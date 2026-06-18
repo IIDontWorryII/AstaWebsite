@@ -8,6 +8,7 @@ import { useEffect, useRef } from "react";
 import { Heart, X } from "lucide-react";
 import type { EventDTO } from "../../../shared/types";
 import { formatEventDate } from "@/lib/events";
+import RichText from "@/components/RichText";
 import { useFavorites } from "@/auth/FavoritesContext";
 import {
   downloadICS,
@@ -97,9 +98,7 @@ export default function EventDialog({ event, onClose }: EventDialogProps) {
               </button>
             )}
 
-            <p className="text-gray-700 whitespace-pre-line mb-4">
-              {event.description}
-            </p>
+            <RichText html={event.description} className="mb-4" />
             <dl className="text-sm space-y-1">
               <div>
                 <dt className="inline font-semibold">Wann: </dt>

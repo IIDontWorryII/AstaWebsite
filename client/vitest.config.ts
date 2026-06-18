@@ -22,5 +22,9 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
     globals: true,
+    // These are integration-style tests (userEvent + jsdom + the headless
+    // ProseMirror editor), which are heavy enough that the default 5s budget
+    // is occasionally exceeded under parallel load. 15s gives slow runs room.
+    testTimeout: 15000,
   },
 })

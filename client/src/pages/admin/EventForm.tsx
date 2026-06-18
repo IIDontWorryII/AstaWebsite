@@ -27,6 +27,7 @@ import {
   type EventFormInput,
 } from "@/lib/admin-events";
 import { Button } from "@/components/ui/button";
+import RichTextEditor, { isEmptyHtml } from "@/components/RichTextEditor";
 
 interface EventFormProps {
   /** When set, the form is in edit mode and pre-fills from this event. */
@@ -127,6 +128,14 @@ export default function EventForm({ event }: EventFormProps) {
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);
+
+    // The rich-text editor replaces the native `required` textarea, so check
+    // for an empty description ("<p></p>") here before submitting.
+    if (isEmptyHtml(description)) {
+      setError("Bitte gib eine Beschreibung ein.");
+      return;
+    }
+
     setSubmitting(true);
 
     try {
@@ -193,19 +202,13 @@ export default function EventForm({ event }: EventFormProps) {
           </div>
 
           <div>
-            <label
-              htmlFor="description"
-              className="block text-sm font-semibold mb-1"
-            >
+            <span className="block text-sm font-semibold mb-1">
               Beschreibung
-            </label>
-            <textarea
-              id="description"
-              required
-              rows={6}
+            </span>
+            <RichTextEditor
               value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              className="w-full border border-gray-300 rounded px-3 py-2"
+              onChange={setDescription}
+              ariaLabel="Beschreibung"
             />
           </div>
 
