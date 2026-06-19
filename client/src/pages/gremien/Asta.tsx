@@ -48,16 +48,12 @@ export default function Asta() {
         image={page.heroImageUrl ?? "/asta-hero.webp"}
         title="AStA"
         subtitle="Allgemeiner Studierendenausschuss"
+        logoRight="/asta-logo.png"
       />
 
       {info && (
         <Band id="info">
-          <InfoSection
-            section={info}
-            title="Über den AStA"
-            logo="/asta-logo.png"
-            textOnly
-          />
+          <InfoSection section={info} title="Über den AStA" textOnly />
         </Band>
       )}
 

@@ -103,35 +103,50 @@ export default function Baracke() {
         subtitle="Die studentische Kneipe des RheinAhrCampus"
       />
 
-      {info && (
-        <Band id="info">
-          <InfoSection section={info} title="Über die BaRACke" altText="BaRACke" />
-        </Band>
-      )}
-
-      {/* Contact bar: opening hours + location + email + phone in one row. */}
-      <Band id="oeffnungszeiten" alt>
-        <SectionHeader title="Öffnungszeiten & Kontakt" />
-        <div className="flex flex-wrap gap-x-10 gap-y-6">
-          <ContactItem
-            icon={Clock}
-            label="Öffnungszeiten"
-            value={hours?.body || "<p>Während der Vorlesungszeit</p>"}
-            html
-          />
-          <ContactItem icon={MapPin} label="Ort" value={LOCATION} />
-          <ContactItem
-            icon={Mail}
-            label="E-Mail"
-            value={EMAIL}
-            href={`mailto:${EMAIL}`}
-          />
-          <ContactItem
-            icon={Phone}
-            label="Telefon"
-            value={PHONE_DISPLAY}
-            href={PHONE_HREF}
-          />
+      {/* "Über die BaRACke" text and the opening hours + contact details share
+          one band under the hero: intro on the left, contact column on the right. */}
+      <Band id="info">
+        <div
+          className={
+            info ? "grid lg:grid-cols-5 gap-10 lg:gap-16 items-start" : ""
+          }
+        >
+          {info && (
+            // Wider intro column (3/5) so the text has room; the contact
+            // column (2/5) sits to the right with an even outer margin.
+            <div className="lg:col-span-3">
+              <InfoSection
+                section={info}
+                title="Über die BaRACke"
+                altText="BaRACke"
+                textOnly
+              />
+            </div>
+          )}
+          <div id="oeffnungszeiten" className="lg:col-span-2">
+            <SectionHeader title="Öffnungszeiten & Kontakt" />
+            <div className="space-y-5">
+              <ContactItem
+                icon={Clock}
+                label="Öffnungszeiten"
+                value={hours?.body || "<p>Während der Vorlesungszeit</p>"}
+                html
+              />
+              <ContactItem icon={MapPin} label="Ort" value={LOCATION} />
+              <ContactItem
+                icon={Mail}
+                label="E-Mail"
+                value={EMAIL}
+                href={`mailto:${EMAIL}`}
+              />
+              <ContactItem
+                icon={Phone}
+                label="Telefon"
+                value={PHONE_DISPLAY}
+                href={PHONE_HREF}
+              />
+            </div>
+          </div>
         </div>
       </Band>
 

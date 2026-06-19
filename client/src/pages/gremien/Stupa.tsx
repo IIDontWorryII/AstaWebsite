@@ -49,6 +49,8 @@ export default function Stupa() {
         image={page.heroImageUrl ?? "/stupa-hero.webp"}
         title="StuPa"
         subtitle="Studierendenparlament"
+        logoRight="/Stupa-logo.png"
+        logoHeightClass="h-30"
       />
 
       {info && (

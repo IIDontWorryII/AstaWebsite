@@ -57,7 +57,9 @@ export default function UpcomingEvents({
       {upcoming.length === 0 ? (
         <p className="text-gray-500">Zur Zeit sind keine Events geplant.</p>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        // Cap the width so each card matches the smaller home-page cards
+        // instead of stretching to a full third of the page.
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl">
           {upcoming.map((e) => (
             <EventCard
               key={e.id}

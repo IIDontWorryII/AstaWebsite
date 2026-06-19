@@ -21,14 +21,6 @@ function slugify(input: string): string {
     .replace(/^-|-$/g, "");
 }
 
-// Map a Fachschaft subtitle to its logo in /public (best-effort).
-function logoFor(subtitle: string | null): string | undefined {
-  const s = (subtitle ?? "").toLowerCase();
-  if (s.includes("wiso")) return "/fswiso-logo.png";
-  if (s.includes("mit") || s.includes("mut")) return "/fsmit-logo.png";
-  return undefined;
-}
-
 export default function Fachschaften() {
   const [page, setPage] = useState<PageDTO | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -58,32 +50,20 @@ export default function Fachschaften() {
   const freeforms = page.sections.filter((s) => s.kind === "FREEFORM");
   const members = page.sections.filter((s) => s.kind === "MEMBER");
 
-  // Both Fachschaft logos sit next to the "Über die Fachschaften" heading
-  // (like the other gremien pages), derived from the FREEFORM headings.
-  const infoLogos = Array.from(
-    new Set(
-      freeforms
-        .map((f) => logoFor(f.subtitle))
-        .filter((l): l is string => !!l),
-    ),
-  );
-
   return (
     <div>
       <PageHero
         image={page.heroImageUrl ?? "/fachschaft-hero.jpg"}
         title="Fachschaften"
         subtitle="Deine Vertretung im Fachbereich"
+        logoLeft="/MIT-logo.png"
+        logoRight="/WiSo-Logo.png"
+        centerTitle
       />
 
       {info && (
         <Band id="info">
-          <InfoSection
-            section={info}
-            title="Über die Fachschaften"
-            textOnly
-            logo={infoLogos}
-          />
+          <InfoSection section={info} title="Über die Fachschaften" textOnly />
         </Band>
       )}
 

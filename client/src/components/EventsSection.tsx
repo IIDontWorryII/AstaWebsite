@@ -6,6 +6,7 @@
 
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { Download, FileText } from "lucide-react";
 import type { EventDTO, ProtocolDTO } from "../../../shared/types";
 import { fetchEvents, fetchProtocols } from "@/lib/api";
 import { selectUpcoming } from "@/lib/events";
@@ -13,6 +14,15 @@ import { useFavorites } from "@/auth/FavoritesContext";
 import EventCard from "@/components/EventCard";
 import EventDialog from "@/components/EventDialog";
 import GremiumBadge from "@/components/GremiumBadge";
+
+/** "15. April 2026" — date-only, German, for the protocols sidebar. */
+function formatMeetingDate(iso: string): string {
+  return new Date(iso).toLocaleDateString("de-DE", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+}
 
 export default function EventsSection() {
   const [events, setEvents] = useState<EventDTO[]>([]);
@@ -84,8 +94,12 @@ export default function EventsSection() {
           </div>
 
           {/* Sidebar: spans 1 column, naturally same height as cards row */}
-          <aside className="lg:col-span-1 bg-gray-100 rounded-2xl p-6 flex flex-col">
-            <h3 className="text-xl font-bold mb-4">Sitzungsprotokolle</h3>
+          <aside className="lg:col-span-1 bg-gray-50 border border-gray-200 rounded-2xl p-6 flex flex-col">
+            <div className="flex items-center gap-2">
+              <FileText className="h-5 w-5 text-asta-red" aria-hidden="true" />
+              <h3 className="text-xl font-bold">Sitzungsprotokolle</h3>
+            </div>
+            <span className="mt-2 mb-4 block h-1 w-12 rounded-full bg-asta-red" />
             {recentProtocols.length === 0 ? (
               <p className="text-sm text-gray-500">Keine Protokolle vorhanden.</p>
             ) : (
@@ -96,19 +110,25 @@ export default function EventsSection() {
                       href={p.fileUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="bg-white rounded-lg p-3 block hover:bg-gray-50"
+                      className="group block rounded-lg border border-transparent bg-white p-3 transition hover:border-asta-red/30 hover:shadow-sm"
                     >
                       <span className="flex items-center gap-2">
                         <GremiumBadge gremium={p.gremium} />
-                        <span className="text-sm font-medium flex-1 truncate">
+                        <span className="text-sm font-semibold flex-1 truncate">
                           {p.title}
                         </span>
-                        <span aria-hidden className="text-gray-400">
-                          ↓
+                      </span>
+                      <span className="mt-2 flex items-center justify-between">
+                        <span className="text-xs text-gray-500">
+                          {formatMeetingDate(p.meetingDate)}
+                        </span>
+                        <span className="inline-flex items-center gap-1 text-xs font-medium text-asta-red opacity-80 group-hover:opacity-100">
+                          <Download className="h-3.5 w-3.5" aria-hidden="true" />
+                          PDF
                         </span>
                       </span>
                       {p.description && (
-                        <span className="block text-xs text-gray-500 mt-1">
+                        <span className="block text-xs text-gray-500 mt-1.5">
                           {p.description}
                         </span>
                       )}
