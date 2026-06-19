@@ -10,7 +10,7 @@ import PageHero from "@/components/PageHero";
 import Band from "@/components/Band";
 import SectionHeader from "@/components/SectionHeader";
 import InfoSection from "@/components/gremien/InfoSection";
-import MenuCard from "@/components/gremien/MenuCard";
+import MenuCarousel from "@/components/MenuCarousel";
 import GalleryCarousel from "@/components/GalleryCarousel";
 import UpcomingEvents from "@/components/UpcomingEvents";
 
@@ -64,20 +64,27 @@ export default function Sport() {
         </Band>
       )}
 
+      {/* Events and the Sportprogramm sit side-by-side: events left, the
+          program page carousel right. When there's no program, events go
+          full-width. */}
       <Band id="events" alt>
-        <UpcomingEvents category="SPORT" title="Bevorstehende Sport-Events" />
-      </Band>
-
-      {program.length > 0 && (
-        <Band id="sportprogramm">
-          <SectionHeader title="Sportprogramm" />
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            {program.map((m) => (
-              <MenuCard key={m.id} section={m} />
-            ))}
+        {program.length > 0 ? (
+          <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-start">
+            <div>
+              <UpcomingEvents
+                category="SPORT"
+                title="Bevorstehende Sport-Events"
+              />
+            </div>
+            <div id="sportprogramm">
+              <SectionHeader title="Sportprogramm" />
+              <MenuCarousel sections={program} label="Sportprogramm" />
+            </div>
           </div>
-        </Band>
-      )}
+        ) : (
+          <UpcomingEvents category="SPORT" title="Bevorstehende Sport-Events" />
+        )}
+      </Band>
 
       {gallery.length > 0 && (
         <Band id="galerie" alt>

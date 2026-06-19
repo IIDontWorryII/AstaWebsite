@@ -13,7 +13,7 @@ import Band from "@/components/Band";
 import SectionHeader from "@/components/SectionHeader";
 import InfoSection from "@/components/gremien/InfoSection";
 import RichText from "@/components/RichText";
-import MenuCard from "@/components/gremien/MenuCard";
+import MenuCarousel from "@/components/MenuCarousel";
 import GalleryCarousel from "@/components/GalleryCarousel";
 import UpcomingEvents from "@/components/UpcomingEvents";
 
@@ -150,20 +150,24 @@ export default function Baracke() {
         </div>
       </Band>
 
+      {/* Events and the Getränkekarte sit side-by-side: events left, the
+          drinks-menu page carousel right. When there's no menu, events go
+          full-width. */}
       <Band id="events">
-        <UpcomingEvents category="BARACKE" title="Events in der BaRACke" />
-      </Band>
-
-      {menu.length > 0 && (
-        <Band id="getraenkekarte" alt>
-          <SectionHeader title="Getränkekarte" />
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            {menu.map((m) => (
-              <MenuCard key={m.id} section={m} />
-            ))}
+        {menu.length > 0 ? (
+          <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-start">
+            <div>
+              <UpcomingEvents category="BARACKE" title="Events in der BaRACke" />
+            </div>
+            <div id="getraenkekarte">
+              <SectionHeader title="Getränkekarte" />
+              <MenuCarousel sections={menu} label="Getränkekarte" />
+            </div>
           </div>
-        </Band>
-      )}
+        ) : (
+          <UpcomingEvents category="BARACKE" title="Events in der BaRACke" />
+        )}
+      </Band>
 
       {gallery.length > 0 && (
         <Band id="galerie">
