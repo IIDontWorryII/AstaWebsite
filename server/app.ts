@@ -12,7 +12,7 @@ import { existsSync } from "node:fs";
 import express, { type Request, type Response } from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
-import { Prisma, PrismaClient } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import type {
   EventDTO,
   ProtocolDTO,
@@ -20,6 +20,7 @@ import type {
   AuthResponse,
   PageDTO,
   PageSectionDTO,
+  ErstiInfoDTO,
   PublicUser,
 } from "../shared/types.js";
 import { hashPassword, verifyPassword } from "./auth/passwords.js";
@@ -49,6 +50,12 @@ import {
   PageSectionUpdateInput,
 } from "./pages/schemas.js";
 import { toPageDTO, toPageSectionDTO } from "./pages/dto.js";
+import { toErstiInfoDTO } from "./ersti/dto.js";
+import {
+  parseErstiFiles,
+  storeErstiFile,
+  deleteErstiFileByUrl,
+} from "./upload/ersti.js";
 import { sanitizeRichText } from "./html/sanitize.js";
 import {
   deleteSectionImageByUrl,
@@ -60,8 +67,9 @@ import {
   parseAvatarImage,
   storeAvatarImage,
 } from "./upload/avatarImages.js";
+import { createPrismaClient } from "./db.js";
 
-export const prisma = new PrismaClient();
+export const prisma = createPrismaClient();
 export const app = express();
 
 // CORS allows the browser to include cookies on cross-origin requests
@@ -631,6 +639,74 @@ app.get(
   },
 );
 
+// ─── Ersti-Info "Fristen & Termine" (singleton) ────────────────────────
+
+// Public: the per-semester Fristen block (date ranges + the two PDFs).
+app.get("/api/ersti", async (_req: Request, res: Response<ErstiInfoDTO>) => {
+  const row = await prisma.erstiInfo.findUnique({ where: { id: "ersti" } });
+  return res.json(toErstiInfoDTO(row));
+});
+
+// Admin: update the Fristen texts and/or the two Prüfungstermine PDFs.
+// Multipart: text fields "pruefungsanmeldung"/"klausurenphase" (empty string
+// clears), optional "mit"/"wiso" PDF uploads, and "removeMit"/"removeWiso"
+// flags to clear an existing file.
+app.put(
+  "/api/admin/ersti",
+  requireEditor,
+  parseErstiFiles,
+  async (req: Request, res: Response<ErstiInfoDTO | { error: string }>) => {
+    const files = req.files as
+      | Record<string, Express.Multer.File[]>
+      | undefined;
+    const mitFile = files?.mit?.[0];
+    const wisoFile = files?.wiso?.[0];
+
+    const existing = await prisma.erstiInfo.findUnique({
+      where: { id: "ersti" },
+    });
+
+    const data: {
+      pruefungsanmeldung?: string | null;
+      klausurenphase?: string | null;
+      pruefungstermineMitUrl?: string | null;
+      pruefungstermineWisoUrl?: string | null;
+    } = {};
+
+    if (typeof req.body.pruefungsanmeldung === "string") {
+      data.pruefungsanmeldung =
+        req.body.pruefungsanmeldung === "" ? null : req.body.pruefungsanmeldung;
+    }
+    if (typeof req.body.klausurenphase === "string") {
+      data.klausurenphase =
+        req.body.klausurenphase === "" ? null : req.body.klausurenphase;
+    }
+
+    if (mitFile) {
+      data.pruefungstermineMitUrl = await storeErstiFile(mitFile);
+      await deleteErstiFileByUrl(existing?.pruefungstermineMitUrl ?? null);
+    } else if (req.body.removeMit === "true") {
+      data.pruefungstermineMitUrl = null;
+      await deleteErstiFileByUrl(existing?.pruefungstermineMitUrl ?? null);
+    }
+
+    if (wisoFile) {
+      data.pruefungstermineWisoUrl = await storeErstiFile(wisoFile);
+      await deleteErstiFileByUrl(existing?.pruefungstermineWisoUrl ?? null);
+    } else if (req.body.removeWiso === "true") {
+      data.pruefungstermineWisoUrl = null;
+      await deleteErstiFileByUrl(existing?.pruefungstermineWisoUrl ?? null);
+    }
+
+    const row = await prisma.erstiInfo.upsert({
+      where: { id: "ersti" },
+      update: data,
+      create: { id: "ersti", ...data },
+    });
+    return res.json(toErstiInfoDTO(row));
+  },
+);
+
 // Update a page's hero image (admin only). Multipart: a new image in the
 // "image" field replaces the current hero; removeHero="true" clears it.
 app.put(
@@ -755,7 +831,14 @@ app.post(
     // Multi-instance kinds that the UI lets editors add freely. INFO,
     // MITGLIEDER, FREEFORM are singletons and can't be created via this
     // route — they're seeded once and edited in place.
-    const ADDABLE_KINDS = ["REFERAT", "MEMBER", "MENU", "GALLERY"] as const;
+    const ADDABLE_KINDS = [
+      "REFERAT",
+      "MEMBER",
+      "MENU",
+      "GALLERY",
+      "STEP",
+      "FAQ",
+    ] as const;
     if (!ADDABLE_KINDS.includes(data.kind as (typeof ADDABLE_KINDS)[number])) {
       return res.status(400).json({
         error: `Only ${ADDABLE_KINDS.join(", ")} sections can be added via this route`,

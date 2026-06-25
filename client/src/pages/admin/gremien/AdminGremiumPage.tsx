@@ -32,11 +32,14 @@ import {
 } from "@/components/ui/alert-dialog";
 import InlineSection from "./InlineSection";
 import HeroImageEditor from "./HeroImageEditor";
+import ErstiFristenEditor from "./ErstiFristenEditor";
 
 /** Kinds the editor can add/reorder/delete freely (multi-instance). */
 const REORDERABLE: ReadonlySet<PageSectionKind> = new Set([
   "MENU",
   "GALLERY",
+  "STEP",
+  "FAQ",
 ]);
 
 // REFERAT (AStA referate) and MEMBER (StuPa/Fachschaft people) are managed in
@@ -89,6 +92,20 @@ const ADD_CONFIG: Record<string, AddConfig[]> = {
       label: "+ Galeriebild hinzufügen",
       kind: "GALLERY",
       placeholder: "Galeriebild",
+    },
+  ],
+  ersti: [
+    {
+      label: "+ Schritt hinzufügen",
+      kind: "STEP",
+      placeholder: "Schritt",
+      initial: { body: "Neuer Schritt" },
+    },
+    {
+      label: "+ Frage hinzufügen",
+      kind: "FAQ",
+      placeholder: "Frage",
+      initial: { subtitle: "Neue Frage", body: "Antwort hier eintragen…" },
     },
   ],
 };
@@ -209,6 +226,10 @@ export default function AdminGremiumPage() {
         currentUrl={page.heroImageUrl}
         onUpdated={setPage}
       />
+
+      {/* Ersti-Info page gets the dedicated Fristen editor (date ranges + the
+          two Prüfungstermine PDFs) above its STEP/FAQ sections. */}
+      {slug === "ersti" && <ErstiFristenEditor />}
 
       <div className="space-y-6">
         {page.sections

@@ -16,6 +16,7 @@ const NAV_ITEMS = [
   { slug: "fachschaften", label: "Fachschaften" },
   { slug: "baracke", label: "BaRACke" },
   { slug: "sport", label: "Sport" },
+  { slug: "ersti", label: "Ersti-Info" },
 ];
 
 export default function AdminGremien() {

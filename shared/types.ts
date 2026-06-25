@@ -102,7 +102,12 @@ export type PageSectionKind =
   | "FREEFORM"
   | "MEMBER"
   | "MENU"
-  | "GALLERY";
+  | "GALLERY"
+  // Ersti-Info page (slug "ersti"):
+  // - STEP — an "Erste Schritte" checklist item (text in `body`).
+  // - FAQ  — a question/answer pair (`subtitle` = question, `body` = answer).
+  | "STEP"
+  | "FAQ";
 
 /** A single section inside a Gremium page. */
 export interface PageSectionDTO {
@@ -114,6 +119,18 @@ export interface PageSectionDTO {
   imageUrl: string | null;
   caption: string | null;
   email: string | null;
+}
+
+/**
+ * The "Fristen & Termine" block on the Ersti-Info page. A singleton — the only
+ * per-semester data on that page. Date ranges are free text (the Hochschule
+ * publishes them late and reformats them); the two PDFs are uploaded files.
+ */
+export interface ErstiInfoDTO {
+  pruefungsanmeldung: string | null;
+  klausurenphase: string | null;
+  pruefungstermineMitUrl: string | null;
+  pruefungstermineWisoUrl: string | null;
 }
 
 /** A Gremium page (asta, stupa, fachschaften) with all its sections. */

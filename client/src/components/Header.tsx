@@ -19,6 +19,7 @@ const navLinkClass = ({ isActive }: { isActive: boolean }) =>
 
 // Kontakt now lives in the footer (AW-46), so it's no longer in the nav.
 const navItems = [
+  { to: "/ersti", label: "Ersti-Info" },
   { to: "/eventkalender", label: "Eventkalender" },
   { to: "/baracke", label: "BaRACke" },
   { to: "/sport", label: "Sport" },

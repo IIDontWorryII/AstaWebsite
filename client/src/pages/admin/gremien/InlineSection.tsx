@@ -18,22 +18,41 @@ import { Button } from "@/components/ui/button";
 // scoped to the kinds Seiteninhalte still shows (REFERAT/MEMBER are managed in
 // the Mitglieder tool).
 function hasSubtitle(kind: string): boolean {
-  return kind === "MITGLIEDER" || kind === "FREEFORM";
+  return kind === "MITGLIEDER" || kind === "FREEFORM" || kind === "FAQ";
 }
 function hasBody(kind: string): boolean {
-  return kind === "INFO" || kind === "MITGLIEDER" || kind === "FREEFORM";
+  return (
+    kind === "INFO" ||
+    kind === "MITGLIEDER" ||
+    kind === "FREEFORM" ||
+    kind === "STEP" ||
+    kind === "FAQ"
+  );
 }
 function hasCaption(kind: string): boolean {
   return kind === "MENU" || kind === "GALLERY";
 }
 function hasImage(kind: string): boolean {
   // INFO is text-only here (its photo lives in the hero), so no image control.
+  // STEP/FAQ are text-only too.
   return (
     kind === "MITGLIEDER" ||
     kind === "FREEFORM" ||
     kind === "MENU" ||
     kind === "GALLERY"
   );
+}
+/** STEP text is a short one-liner — a plain input, not the rich editor. */
+function bodyIsPlain(kind: string): boolean {
+  return kind === "STEP";
+}
+function subtitleLabel(kind: string): string {
+  return kind === "FAQ" ? "Frage" : "Überschrift";
+}
+function bodyLabel(kind: string): string {
+  if (kind === "STEP") return "Schritt";
+  if (kind === "FAQ") return "Antwort";
+  return "Text";
 }
 
 const KIND_LABEL: Record<string, string> = {
@@ -42,6 +61,8 @@ const KIND_LABEL: Record<string, string> = {
   FREEFORM: "Abschnitt",
   MENU: "Menübild",
   GALLERY: "Galeriebild",
+  STEP: "Schritt",
+  FAQ: "Frage",
 };
 
 /** Normalize body HTML so an empty editor ("<p></p>") compares as "". */
@@ -206,8 +227,8 @@ export default function InlineSection({
             type="text"
             value={subtitle}
             onChange={(e) => setSubtitle(e.target.value)}
-            aria-label="Überschrift"
-            placeholder="Überschrift"
+            aria-label={subtitleLabel(kind)}
+            placeholder={subtitleLabel(kind)}
             className="w-full border-0 border-b-2 border-transparent px-0 text-2xl font-bold focus:border-asta-red focus:outline-none md:text-3xl"
           />
           <div className="mt-2 h-1 w-12 rounded bg-asta-red" />
@@ -263,10 +284,24 @@ export default function InlineSection({
         </div>
       )}
 
-      {/* Body (inline rich-text) */}
-      {hasBody(kind) && (
-        <RichTextEditor value={body} onChange={setBody} ariaLabel="Text" />
-      )}
+      {/* Body — a plain input for short STEP text, otherwise the rich editor. */}
+      {hasBody(kind) &&
+        (bodyIsPlain(kind) ? (
+          <input
+            type="text"
+            value={body}
+            onChange={(e) => setBody(e.target.value)}
+            aria-label={bodyLabel(kind)}
+            placeholder={bodyLabel(kind)}
+            className="w-full rounded border border-gray-300 px-3 py-2"
+          />
+        ) : (
+          <RichTextEditor
+            value={body}
+            onChange={setBody}
+            ariaLabel={bodyLabel(kind)}
+          />
+        ))}
 
       {/* Caption (inline) */}
       {hasCaption(kind) && (

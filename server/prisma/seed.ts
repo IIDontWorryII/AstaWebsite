@@ -1,8 +1,9 @@
-import { PrismaClient } from "@prisma/client";
+import "dotenv/config";
 import { hashPassword } from "../auth/passwords.js";
 import { seedPages } from "./seed-pages.js";
+import { createPrismaClient } from "../db.js";
 
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 
 const events = [
   {
@@ -110,6 +111,79 @@ async function main() {
   // none (so admin edits survive seed re-runs).
   const sectionCount = await seedPages(prisma);
   console.log(`Seeded ${sectionCount} page sections`);
+
+  await seedErsti();
+}
+
+// Ersti-Info page: STEP + FAQ sections (editable in Seiteninhalte) and the
+// singleton ErstiInfo row for the Fristen block. Idempotent — sections are
+// only seeded when the page has none, so admin edits survive re-runs.
+const ERSTI_STEPS = [
+  "Uni-Account aktivieren und Passwort setzen",
+  "Uni-Mail (SoGo) einrichten und regelmäßig checken",
+  "WLAN „eduroam“ auf Handy & Laptop einrichten",
+  "Kurse/Module in OLAT belegen",
+  "Semesterbeitrag fristgerecht zahlen (sonst droht die Exmatrikulation)",
+  "Studierendenausweis & Semesterticket abholen",
+  "Prüfungen im ICMS anmelden – auf die Frist achten!",
+];
+
+const ERSTI_FAQ: [string, string][] = [
+  [
+    "Wie melde ich mich für Prüfungen an?",
+    "Über das ICMS innerhalb des Anmeldezeitraums. Den genauen Zeitraum gibt die Hochschule jedes Semester bekannt – behalte SoGo und ICMS im Blick.",
+  ],
+  [
+    "Was passiert, wenn ich den Semesterbeitrag nicht zahle?",
+    "Ohne fristgerechte Zahlung (Rückmeldung) wirst du exmatrikuliert. Zahl also unbedingt rechtzeitig.",
+  ],
+  [
+    "Wo finde ich meinen Stundenplan?",
+    "Deine Veranstaltungen findest du in OLAT; den Plan stellst du dir aus den belegten Modulen zusammen.",
+  ],
+  [
+    "Was deckt das Semesterticket ab?",
+    "Es ist auf deinem Studierendenausweis hinterlegt. Welche Verkehrsmittel und Regionen es abdeckt, steht auf den Seiten der Hochschule bzw. des AStA.",
+  ],
+];
+
+async function seedErsti() {
+  const page = await prisma.page.upsert({
+    where: { slug: "ersti" },
+    update: {},
+    create: { slug: "ersti", title: "Ersti-Info" },
+  });
+
+  const existing = await prisma.pageSection.count({
+    where: { pageId: page.id },
+  });
+  if (existing === 0) {
+    let order = 0;
+    for (const text of ERSTI_STEPS) {
+      await prisma.pageSection.create({
+        data: { pageId: page.id, order: order++, kind: "STEP", body: text },
+      });
+    }
+    for (const [question, answer] of ERSTI_FAQ) {
+      await prisma.pageSection.create({
+        data: {
+          pageId: page.id,
+          order: order++,
+          kind: "FAQ",
+          subtitle: question,
+          body: `<p>${answer}</p>`,
+        },
+      });
+    }
+  }
+
+  await prisma.erstiInfo.upsert({
+    where: { id: "ersti" },
+    update: {},
+    create: { id: "ersti" },
+  });
+
+  console.log("Seeded Ersti-Info page");
 }
 
 main()

@@ -118,6 +118,25 @@ enum PageSectionKind {
   MEMBER
   MENU
   GALLERY
+  // Ersti-Info page content (multi-instance, editor add/delete/reorder):
+  //   STEP — one "Erste Schritte" checklist item (text in body).
+  //   FAQ  — one question/answer pair (subtitle = question, body = answer).
+  STEP
+  FAQ
+}
+
+// Singleton holder for the Ersti-Info "Fristen & Termine" block — the only
+// per-semester data on that page. One row (id "ersti"); upserted by the admin.
+model ErstiInfo {
+  id                      String   @id @default("ersti")
+  // Free-text date ranges (e.g. "01.–15.06.2026"); the Hochschule publishes
+  // these late and changes them each semester, so they're editable text.
+  pruefungsanmeldung      String?
+  klausurenphase          String?
+  // Uploaded Prüfungstermine PDFs per Fachbereich (R2 URLs).
+  pruefungstermineMitUrl  String?
+  pruefungstermineWisoUrl String?
+  updatedAt               DateTime @updatedAt
 }
 
 model Protocol {

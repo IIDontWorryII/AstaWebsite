@@ -16,6 +16,8 @@ export const PageSectionKind = z.enum([
   "MEMBER",
   "MENU",
   "GALLERY",
+  "STEP",
+  "FAQ",
 ]);
 export type PageSectionKindT = z.infer<typeof PageSectionKind>;
 
