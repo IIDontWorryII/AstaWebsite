@@ -13,11 +13,12 @@
 //   npm run migrate:richtext            # apply
 //   npm run migrate:richtext -- --dry   # preview, write nothing
 
-import { PrismaClient } from "@prisma/client";
+import "dotenv/config";
 import { looksLikeHtml, plainTextToHtml } from "../html/plainTextToHtml.js";
 import { sanitizeRichText } from "../html/sanitize.js";
+import { createPrismaClient } from "../db.js";
 
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 const DRY_RUN = process.argv.includes("--dry");
 
 /** Convert one legacy value, or return null if it needs no migration. */
