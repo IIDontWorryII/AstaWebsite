@@ -1,18 +1,15 @@
 // client/src/pages/admin/gremien/AdminGremiumPage.tsx
 //
-// EDITOR view of a single Gremium page. Fetches the page via the same
-// API the public view uses, renders the SAME section components, but
-// wraps each one in EditableSection so the editor sees pencil/move/
-// delete affordances.
+// EDITOR view of a single Gremium page. Fetches the page via the same API the
+// public view uses and renders each section as an InlineSection — the editor
+// types directly on the heading/body/caption (no pencil, no drawer) and saves
+// per section. On save we replace that section in `page.sections` locally so
+// the UI updates without a refetch.
 //
 // State machine:
-//   loading  → page is null, no error → "Lädt…"
-//   error    → error string
-//   ready    → page rendered with editable sections
-//
-// editing  → null = no drawer open; otherwise a section is being edited.
-//            On save, we replace that section in `page.sections` locally
-//            so the UI updates without a full refetch.
+//   loading → page is null, no error → "Lädt…"
+//   error   → error string
+//   ready   → page rendered with inline-editable sections
 
 import { useCallback, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
@@ -22,13 +19,6 @@ import type {
   PageSectionKind,
 } from "../../../../../shared/types";
 import { addSection, deleteSection, fetchPage, moveSection } from "@/lib/pages";
-import InfoSection from "@/components/gremien/InfoSection";
-import ReferatCard from "@/components/gremien/ReferatCard";
-import MitgliederSection from "@/components/gremien/MitgliederSection";
-import FreeformSection from "@/components/gremien/FreeformSection";
-import MemberCard from "@/components/gremien/MemberCard";
-import MenuCard from "@/components/gremien/MenuCard";
-import GalleryCard from "@/components/gremien/GalleryCard";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -40,29 +30,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import EditableSection from "./EditableSection";
-import SectionEditorDrawer from "./SectionEditorDrawer";
+import InlineSection from "./InlineSection";
 import HeroImageEditor from "./HeroImageEditor";
-
-/** Pick the right renderer for a section based on its kind. */
-function renderSectionByKind(section: PageSectionDTO) {
-  switch (section.kind) {
-    case "INFO":
-      return <InfoSection section={section} />;
-    case "REFERAT":
-      return <ReferatCard section={section} />;
-    case "MITGLIEDER":
-      return <MitgliederSection section={section} />;
-    case "FREEFORM":
-      return <FreeformSection section={section} />;
-    case "MEMBER":
-      return <MemberCard section={section} />;
-    case "MENU":
-      return <MenuCard section={section} />;
-    case "GALLERY":
-      return <GalleryCard section={section} />;
-  }
-}
 
 /** Kinds the editor can add/reorder/delete freely (multi-instance). */
 const REORDERABLE: ReadonlySet<PageSectionKind> = new Set([
@@ -129,7 +98,6 @@ export default function AdminGremiumPage() {
 
   const [page, setPage] = useState<PageDTO | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [editing, setEditing] = useState<PageSectionDTO | null>(null);
 
   const loadPage = useCallback(() => {
     setError(null);
@@ -143,17 +111,18 @@ export default function AdminGremiumPage() {
     loadPage();
   }, [loadPage]);
 
-  function handleSaved(updated: PageSectionDTO | null) {
-    if (updated && page) {
-      // Replace the edited section in the local state — no refetch needed.
-      setPage({
-        ...page,
-        sections: page.sections.map((s) =>
-          s.id === updated.id ? updated : s,
-        ),
-      });
-    }
-    setEditing(null);
+  function handleSaved(updated: PageSectionDTO) {
+    // Replace the saved section in local state — no refetch needed.
+    setPage((prev) =>
+      prev
+        ? {
+            ...prev,
+            sections: prev.sections.map((s) =>
+              s.id === updated.id ? updated : s,
+            ),
+          }
+        : prev,
+    );
   }
 
   async function handleDelete(id: string) {
@@ -176,11 +145,11 @@ export default function AdminGremiumPage() {
 
   async function handleAdd(config: AddConfig) {
     try {
-      const created = await addSection(slug, config.kind, config.initial ?? {});
-      // Reload to pick up the new section + open it for editing right away.
+      await addSection(slug, config.kind, config.initial ?? {});
+      // Reload to pick up the new section; it appears as an inline editor at
+      // the end of the list, ready to edit in place.
       const fresh = await fetchPage(slug);
       setPage(fresh);
-      setEditing(created);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Hinzufügen fehlgeschlagen");
     }
@@ -230,8 +199,8 @@ export default function AdminGremiumPage() {
       <header>
         <h1 className="text-3xl font-bold">{page.title} bearbeiten</h1>
         <p className="text-sm text-gray-600 mt-1">
-          Klicke auf das Stift-Symbol oben rechts an einem Abschnitt, um ihn zu
-          bearbeiten.
+          Klicke direkt auf einen Text, um ihn zu bearbeiten. Änderungen
+          speicherst du pro Abschnitt mit „Speichern“.
         </p>
       </header>
 
@@ -245,39 +214,37 @@ export default function AdminGremiumPage() {
         {page.sections
           .filter((section) => !HIDDEN_KINDS.has(section.kind))
           .map((section) => (
-          <EditableSection
-            key={section.id}
-            onEdit={() => setEditing(section)}
-            onMoveUp={
-              canMoveUp(section)
-                ? () => handleMove(section.id, "up")
-                : undefined
-            }
-            onMoveDown={
-              canMoveDown(section)
-                ? () => handleMove(section.id, "down")
-                : undefined
-            }
-            onDelete={
-              canDelete(section)
-                ? () => {
-                    // Browser confirm for now — simpler than plumbing a
-                    // dialog state per row. Upgrade to AlertDialog if AStA
-                    // complains it's ugly.
-                    if (
-                      window.confirm(
-                        `„${section.subtitle ?? "Abschnitt"}“ wirklich löschen?`,
-                      )
-                    ) {
-                      handleDelete(section.id);
+            <InlineSection
+              key={section.id}
+              section={section}
+              onSaved={handleSaved}
+              onMoveUp={
+                canMoveUp(section)
+                  ? () => handleMove(section.id, "up")
+                  : undefined
+              }
+              onMoveDown={
+                canMoveDown(section)
+                  ? () => handleMove(section.id, "down")
+                  : undefined
+              }
+              onDelete={
+                canDelete(section)
+                  ? () => {
+                      // Browser confirm for now — simpler than plumbing a
+                      // dialog state per row.
+                      if (
+                        window.confirm(
+                          `„${section.subtitle ?? "Abschnitt"}“ wirklich löschen?`,
+                        )
+                      ) {
+                        handleDelete(section.id);
+                      }
                     }
-                  }
-                : undefined
-            }
-          >
-            {renderSectionByKind(section)}
-          </EditableSection>
-        ))}
+                  : undefined
+              }
+            />
+          ))}
       </div>
 
       {/* Pages with entries in ADD_CONFIG get "add new section" button(s).
@@ -311,8 +278,6 @@ export default function AdminGremiumPage() {
           ))}
         </div>
       )}
-
-      <SectionEditorDrawer section={editing} onClose={handleSaved} />
     </div>
   );
 }

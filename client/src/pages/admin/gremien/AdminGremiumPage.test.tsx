@@ -1,7 +1,7 @@
 // client/src/pages/admin/gremien/AdminGremiumPage.test.tsx
 //
 // Tests for the admin Gremium page: loading/error states, render of fetched
-// sections, and the edit-drawer flow (open, save, list updates).
+// sections, and the inline edit flow (type in place → save bar → list update).
 //
 // We mock @/lib/pages so the page doesn't hit the network.
 
@@ -21,7 +21,7 @@ const mockAddReferatSection = vi.fn();
 // The section body is edited with the rich-text editor (a contenteditable
 // ProseMirror widget). Swap it for a plain <textarea> honouring the same
 // value/onChange/ariaLabel contract so getByLabelText("Text") + fireEvent.change
-// still drive the real drawer logic.
+// still drive the real inline-edit logic.
 vi.mock("@/components/RichTextEditor", () => ({
   default: ({
     value,
@@ -115,8 +115,10 @@ describe("AdminGremiumPage", () => {
       await screen.findByRole("heading", { name: "AStA bearbeiten" }),
     ).toBeInTheDocument();
     expect(mockFetchPage).toHaveBeenCalledWith("asta");
-    // Both sections render via the public components.
-    expect(screen.getAllByText(/AStA|Vorsitz|Allgemeine/i).length).toBeGreaterThan(0);
+    // The INFO body renders directly in the inline editor.
+    expect(screen.getByLabelText("Text")).toHaveValue(
+      "Der Allgemeine Studierendenausschuss…",
+    );
   });
 
   it("shows an error message when fetchPage rejects", async () => {
@@ -129,23 +131,31 @@ describe("AdminGremiumPage", () => {
     ).toBeInTheDocument();
   });
 
-  it("opens the editor drawer when the pencil button is clicked", async () => {
+  it("edits text inline and reveals a save bar (no drawer/pencil)", async () => {
     mockFetchPage.mockResolvedValueOnce(astaPage);
 
     renderAt();
     await screen.findByRole("heading", { name: "AStA bearbeiten" });
 
-    // Click the FIRST edit button (the INFO section's).
-    const editButtons = screen.getAllByTitle("Bearbeiten");
-    await userEvent.click(editButtons[0]);
+    // No pencil/drawer affordance anymore.
+    expect(screen.queryByTitle("Bearbeiten")).not.toBeInTheDocument();
 
-    // Drawer renders the "Info bearbeiten" title.
+    const body = screen.getByLabelText("Text") as HTMLTextAreaElement;
+    expect(body).toHaveValue("Der Allgemeine Studierendenausschuss…");
+    // Nothing changed yet → no save bar.
     expect(
-      await screen.findByText("Info bearbeiten"),
+      screen.queryByRole("button", { name: "Speichern" }),
+    ).not.toBeInTheDocument();
+
+    fireEvent.change(body, { target: { value: "Neuer Text" } });
+
+    // Editing in place reveals the per-section save bar.
+    expect(
+      screen.getByRole("button", { name: "Speichern" }),
     ).toBeInTheDocument();
   });
 
-  it("saves an edit via updateSection and updates the rendered list", async () => {
+  it("saves an inline edit via updateSection and updates the rendered list", async () => {
     mockFetchPage.mockResolvedValueOnce(astaPage);
 
     const updated: PageSectionDTO = {
@@ -157,17 +167,9 @@ describe("AdminGremiumPage", () => {
     renderAt();
     await screen.findByRole("heading", { name: "AStA bearbeiten" });
 
-    // Only the INFO section is editable here (REFERAT is hidden), so its edit
-    // button is the only one.
-    const editButtons = screen.getAllByTitle("Bearbeiten");
-    expect(editButtons).toHaveLength(1);
-    await userEvent.click(editButtons[0]);
-
-    expect(await screen.findByText("Info bearbeiten")).toBeInTheDocument();
-
-    // Change the body field and save.
-    const bodyField = screen.getByLabelText("Text") as HTMLTextAreaElement;
-    fireEvent.change(bodyField, {
+    // Edit the INFO body in place and save.
+    const body = screen.getByLabelText("Text") as HTMLTextAreaElement;
+    fireEvent.change(body, {
       target: { value: "Updated info text for the page." },
     });
 
@@ -181,12 +183,16 @@ describe("AdminGremiumPage", () => {
     expect(input.body).toBe("Updated info text for the page.");
     expect(file).toBeNull();
 
-    // After save, the list should show the new body text.
+    // After save, the inline editor reflects the saved value and the save bar
+    // disappears (no longer dirty).
     await waitFor(() => {
-      expect(
-        screen.getByText(/Updated info text for the page/),
-      ).toBeInTheDocument();
+      expect(screen.getByLabelText("Text")).toHaveValue(
+        "Updated info text for the page.",
+      );
     });
+    expect(
+      screen.queryByRole("button", { name: "Speichern" }),
+    ).not.toBeInTheDocument();
   });
 
   it("hides REFERAT and MEMBER sections (managed in the Mitglieder tool)", async () => {
@@ -207,10 +213,11 @@ describe("AdminGremiumPage", () => {
     await screen.findByRole("heading", { name: "AStA bearbeiten" });
 
     // The REFERAT ("Vorsitz") and MEMBER ("Max Mustermann") sections are not
-    // rendered; only the INFO section is editable here.
+    // rendered; only the INFO section is editable here → exactly one inline
+    // body editor.
     expect(screen.queryByText("Vorsitz")).not.toBeInTheDocument();
     expect(screen.queryByText("Max Mustermann")).not.toBeInTheDocument();
-    expect(screen.getAllByTitle("Bearbeiten")).toHaveLength(1);
+    expect(screen.getAllByLabelText("Text")).toHaveLength(1);
 
     // And there is no "add Referat/Mitglied" button on this page anymore.
     expect(
