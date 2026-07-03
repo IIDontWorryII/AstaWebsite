@@ -19,10 +19,10 @@ const navLinkClass = ({ isActive }: { isActive: boolean }) =>
 
 // Kontakt now lives in the footer (AW-46), so it's no longer in the nav.
 const navItems = [
-  { to: "/ersti", label: "Ersti-Info" },
   { to: "/eventkalender", label: "Eventkalender" },
   { to: "/baracke", label: "BaRACke" },
   { to: "/sport", label: "Sport" },
+  { to: "/ersti", label: "Ersti-Info" },
 ];
 
 const gremienSections = [
@@ -72,7 +72,11 @@ export default function Header() {
       <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
         {/*Left: logo */}
         <Link to="/">
-          <img src="/asta-logo.png" alt="AStA Remagen" className="h-16 w-auto" />
+          <img
+            src="/asta-logo.png"
+            alt="AStA Remagen"
+            className="h-16 w-auto"
+          />
         </Link>
 
         {/*Center:  primary nav */}
@@ -196,11 +200,7 @@ export default function Header() {
 }
 
 /** Stacked navigation shown below the bar on mobile when the hamburger is open. */
-function MobileMenu({
-  user,
-}: {
-  user: ReturnType<typeof useAuth>["user"];
-}) {
+function MobileMenu({ user }: { user: ReturnType<typeof useAuth>["user"] }) {
   const itemClass =
     "block py-2 text-base font-medium text-gray-800 hover:text-asta-red";
 
