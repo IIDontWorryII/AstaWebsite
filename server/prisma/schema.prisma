@@ -21,10 +21,14 @@ datasource db {
 model User {
   id           String     @id @default(uuid())
   email        String     @unique
-  passwordHash String
+  // Nullable: users who sign in via SAML (HS Koblenz SSO) have no password.
+  passwordHash String?
   displayName  String
   role         String     @default("USER")
   avatarUrl    String?
+  // SAML identifier (eduPersonPrincipalName) for SSO users; null for
+  // email/password accounts. Unique so an eppn maps to exactly one user.
+  eppn         String?    @unique
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
   lastLoginAt  DateTime?

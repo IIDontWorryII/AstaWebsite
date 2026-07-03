@@ -57,6 +57,7 @@ import {
   deleteErstiFileByUrl,
 } from "./upload/ersti.js";
 import { sanitizeRichText } from "./html/sanitize.js";
+import { getSpMetadata } from "./auth/saml.js";
 import {
   deleteSectionImageByUrl,
   parseSectionImage,
@@ -88,6 +89,12 @@ app.use(cookieParser());
 
 app.get("/api/health", (_req: Request, res: Response<HealthResponse>) => {
   res.json({ status: "ok", version: "0.1.0" });
+});
+
+// Public: our SAML SP metadata (XML). Hand this URL/file to the IdP admin
+// (HS Koblenz) so they can register us as a Service Provider.
+app.get("/saml/metadata", (_req: Request, res: Response) => {
+  res.type("application/xml").send(getSpMetadata());
 });
 
 app.get("/api/events", async (_req: Request, res: Response<EventDTO[]>) => {
@@ -435,7 +442,13 @@ app.post(
     // generic error — never reveal which field was wrong (prevents
     // attackers from probing for valid emails).
     const user = await prisma.user.findUnique({ where: { email } });
-    if (!user || !(await verifyPassword(password, user.passwordHash))) {
+    // `!user.passwordHash` = a SAML-only account (HS Koblenz SSO), which has no
+    // password — reject with the same generic error (no user enumeration).
+    if (
+      !user ||
+      !user.passwordHash ||
+      !(await verifyPassword(password, user.passwordHash))
+    ) {
       return res.status(401).json({ error: "Invalid email or password" });
     }
 
@@ -548,6 +561,12 @@ app.post(
     const user = await prisma.user.findUnique({ where: { id } });
     if (!user) {
       return res.status(401).json({ error: "Not authenticated" });
+    }
+    if (!user.passwordHash) {
+      return res.status(400).json({
+        error:
+          "Dieses Konto nutzt die HS-Koblenz-Anmeldung und hat kein Passwort.",
+      });
     }
     if (!(await verifyPassword(currentPassword, user.passwordHash))) {
       return res.status(400).json({ error: "Aktuelles Passwort ist falsch" });
