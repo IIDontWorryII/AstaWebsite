@@ -1,2 +1,4 @@
 node_modules/
 .env
+# SAML SP keypair — the private key must NEVER be committed.
+*.pem
