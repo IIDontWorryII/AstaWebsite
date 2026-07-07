@@ -6,21 +6,21 @@ import { MemoryRouter } from "react-router-dom";
 import Datenschutz from "./Datenschutz";
 
 describe("Datenschutz", () => {
-  it("renders the privacy policy with controller and rights sections", () => {
-    // Wrapped in a router because the page links to /impressum.
+  it("renders the privacy policy with the key sections", () => {
     render(
       <MemoryRouter>
         <Datenschutz />
       </MemoryRouter>,
     );
+    // The h1 contains a soft hyphen (Datenschutz&shy;erklärung), so match loosely.
     expect(
-      screen.getByRole("heading", { name: "Datenschutzerklärung" }),
+      screen.getByRole("heading", { level: 1, name: /Datenschutz/ }),
     ).toBeInTheDocument();
+    // Controller ("verantwortliche Stelle") section is present.
     expect(
-      screen.getByRole("heading", { name: /Verantwortlicher/ }),
+      screen.getByRole("heading", { name: /verantwortlichen Stelle/i }),
     ).toBeInTheDocument();
-    expect(
-      screen.getByRole("heading", { name: /Deine Rechte/ }),
-    ).toBeInTheDocument();
+    // Our actual hosting provider is named.
+    expect(screen.getByText(/netcup GmbH/i)).toBeInTheDocument();
   });
 });
