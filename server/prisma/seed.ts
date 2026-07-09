@@ -1,5 +1,4 @@
 import "dotenv/config";
-import { hashPassword } from "../auth/passwords.js";
 import { seedPages } from "./seed-pages.js";
 import { createPrismaClient } from "../db.js";
 
@@ -64,15 +63,9 @@ const protocols = [
   },
 ];
 
-const ADMINS = [
-  {
-    id: "user-admin",
-    email: "admin@example.com",
-    password: "admin12345", // plain, hashed during seed
-    displayName: "Admin",
-    role: "EDITOR",
-  },
-];
+// NOTE: no default admin is seeded — a hardcoded password is a security risk
+// on a live DB. Editor accounts are created by signing up and being promoted
+// (or via SAML). To provision a first editor, use `npm run set-editor`.
 
 async function main() {
   for (const e of events) {
@@ -91,20 +84,6 @@ async function main() {
     });
   }
   console.log(`Seeded ${protocols.length} protocols`);
-  for (const u of ADMINS) {
-    await prisma.user.upsert({
-      where: { id: u.id },
-      update: {}, // do nothing if user exists
-      create: {
-        id: u.id,
-        email: u.email,
-        passwordHash: await hashPassword(u.password),
-        displayName: u.displayName,
-        role: u.role,
-      },
-    });
-  }
-  console.log(`Seeded ${ADMINS.length} users`);
 
   // Gremien pages (asta, stupa, fachschaften) + their sections. Idempotent:
   // pages are upserted, sections are only created if the page currently has

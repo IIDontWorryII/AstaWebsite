@@ -9,6 +9,7 @@
     "start": "node dist/server/index.js",
     "typecheck": "tsc --noEmit",
     "seed": "tsx prisma/seed.ts",
+    "set-editor": "tsx prisma/set-editor.ts",
     "migrate:richtext": "tsx prisma/migrate-richtext.ts",
     "test": "vitest",
     "test:run": "vitest run"
