@@ -87,6 +87,12 @@ jobs:
       - name: Seed database
         working-directory: server
         run: npx prisma db seed
+      # The auth-dependent tests log in as admin@example.com. The prod seed no
+      # longer creates a default admin (security), so provision it here — this
+      # only ever touches the throwaway CI database.
+      - name: Provision test editor
+        working-directory: server
+        run: npm run set-editor -- admin@example.com admin12345
       - name: Typecheck
         working-directory: server
         run: npm run typecheck
