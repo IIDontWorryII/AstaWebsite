@@ -7,13 +7,13 @@
 // multer and shows up on req.file.
 
 import { z } from "zod";
+import { Gremium } from "@prisma/client";
 
 /** Required fields for creating a protocol. The PDF is handled via multer. */
 export const ProtocolCreateInput = z.object({
-  // Free-form string for now. Common values: "ASTA", "STUPA", "FS-MIT".
-  // We could tighten to an enum later once Fachschaften pages are wired
-  // up and the full set of valid values is known.
-  gremium: z.string().min(1, "Gremium is required"),
+  // Validated against the Prisma `Gremium` enum (single source of truth):
+  // a value outside the enum is rejected with 400 before it reaches the DB.
+  gremium: z.nativeEnum(Gremium),
   title: z.string().min(1, "Title is required"),
   // Optional short summary. Empty string on update clears it (handled in route).
   description: z.string().optional(),

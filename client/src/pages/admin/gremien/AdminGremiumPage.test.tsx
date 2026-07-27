@@ -89,7 +89,6 @@ const astaPage: PageDTO = {
   id: "page-asta",
   slug: "asta",
   title: "AStA",
-  intro: null,
   heroImageUrl: null,
   sections: [infoSection, referatSection],
 };

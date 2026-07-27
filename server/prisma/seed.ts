@@ -1,6 +1,7 @@
 import "dotenv/config";
 import { seedPages } from "./seed-pages.js";
 import { createPrismaClient } from "../db.js";
+import { Gremium } from "@prisma/client";
 
 const prisma = createPrismaClient();
 
@@ -42,21 +43,21 @@ const events = [
 const protocols = [
   {
     id: "protocol-asta-2026-04-15",
-    gremium: "ASTA",
+    gremium: Gremium.ASTA,
     title: "AStA-Sitzung — Sommerfest-Planung",
     meetingDate: new Date("2026-04-15"),
     fileUrl: "/uploads/protocols/asta-2026-04-15.pdf",
   },
   {
     id: "protocol-asta-2026-04-01",
-    gremium: "ASTA",
+    gremium: Gremium.ASTA,
     title: "AStA-Sitzung — Haushaltsentwurf",
     meetingDate: new Date("2026-04-01"),
     fileUrl: "/uploads/protocols/asta-2026-04-01.pdf",
   },
   {
     id: "protocol-stupa-2026-03-20",
-    gremium: "STUPA",
+    gremium: Gremium.STUPA,
     title: "StuPa-Sitzung — Wahlordnung",
     meetingDate: new Date("2026-03-20"),
     fileUrl: "/uploads/protocols/stupa-2026-03-20.pdf",

@@ -36,7 +36,7 @@ function section(over: Partial<PageSectionDTO>): PageSectionDTO {
 }
 
 function page(slug: string, sections: PageSectionDTO[]): PageDTO {
-  return { id: slug, slug, title: slug, intro: null, heroImageUrl: null, sections };
+  return { id: slug, slug, title: slug, heroImageUrl: null, sections };
 }
 
 const PAGES: Record<string, PageDTO> = {

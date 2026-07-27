@@ -21,7 +21,6 @@ const page: PageDTO = {
   id: "page-ersti",
   slug: "ersti",
   title: "Ersti-Info",
-  intro: null,
   heroImageUrl: null,
   sections: [
     { id: "step-1", order: 0, kind: "STEP", subtitle: null, body: "Uni-Account aktivieren", imageUrl: null, caption: null, email: null },

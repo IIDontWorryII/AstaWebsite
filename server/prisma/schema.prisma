@@ -24,7 +24,7 @@ model User {
   // Nullable: users who sign in via SAML (HS Koblenz SSO) have no password.
   passwordHash String?
   displayName  String
-  role         String     @default("USER")
+  role         Role       @default(USER)
   avatarUrl    String?
   // SAML identifier (eduPersonPrincipalName) for SSO users; null for
   // email/password accounts. Unique so an eppn maps to exactly one user.
@@ -74,7 +74,6 @@ model Page {
   id           String        @id @default(uuid())
   slug         String        @unique
   title        String
-  intro        String?
   // Optional hero background image, editable per page in admin. Falls back
   // to a bundled default in the page component when null.
   heroImageUrl String?
@@ -145,10 +144,25 @@ model ErstiInfo {
 
 model Protocol {
   id          String   @id @default(uuid())
-  gremium     String
+  gremium     Gremium
   title       String
   description String?
   meetingDate DateTime
   fileUrl     String
   uploadedAt  DateTime @default(now())
+}
+
+// User permission level. Closed set controlled in code (never set by the
+// client) — safe to model as a DB enum for a real type guarantee.
+enum Role {
+  USER
+  EDITOR
+}
+
+// Which student-body organ a protocol belongs to. Currently the two Gremien
+// with a public Protokolle section. Adding a Fachschaft here later needs a new
+// value + migration AND a matching entry in the shared GREMIEN list.
+enum Gremium {
+  ASTA
+  STUPA
 }

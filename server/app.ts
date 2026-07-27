@@ -12,7 +12,7 @@ import { existsSync } from "node:fs";
 import express, { type Request, type Response } from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
-import { Prisma } from "@prisma/client";
+import { Prisma, Gremium } from "@prisma/client";
 import type {
   EventDTO,
   ProtocolDTO,
@@ -238,14 +238,23 @@ app.delete(
 app.get(
   "/api/protocols",
   async (req: Request, res: Response<ProtocolDTO[]>) => {
-    const gremium =
+    const gremiumParam =
       typeof req.query.gremium === "string" ? req.query.gremium : undefined;
 
+    // Unknown gremium (not a valid enum value) → return no matches, rather
+    // than letting an invalid value reach Postgres and raise an enum error.
+    if (
+      gremiumParam !== undefined &&
+      !(Object.values(Gremium) as string[]).includes(gremiumParam)
+    ) {
+      return res.json([]);
+    }
+
     const protocols = await prisma.protocol.findMany({
-      where: gremium ? { gremium } : undefined,
+      where: gremiumParam ? { gremium: gremiumParam as Gremium } : undefined,
       orderBy: { meetingDate: "desc" },
     });
-    res.json(protocols.map(toProtocolDTO));
+    return res.json(protocols.map(toProtocolDTO));
   },
 );
 
@@ -309,7 +318,7 @@ app.put(
     }
 
     const updatePayload: {
-      gremium?: string;
+      gremium?: Gremium;
       title?: string;
       description?: string | null;
       meetingDate?: Date;
