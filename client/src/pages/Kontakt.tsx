@@ -4,6 +4,8 @@
 // mail backend yet); links use mailto:/tel: so they work from any device.
 
 import { SOCIAL_LINKS } from "@/lib/socials";
+import ObfuscatedMailLink from "@/components/ObfuscatedMailLink";
+import { ASTA_CONTACT } from "@/lib/contact";
 
 export default function Kontakt() {
   return (
@@ -33,12 +35,11 @@ export default function Kontakt() {
           <ul className="space-y-2 text-gray-700">
             <li>
               ✉️{" "}
-              <a
-                href="mailto:rac-asta-vorsitz@rheinahrcampus.de"
+              <ObfuscatedMailLink
+                user={ASTA_CONTACT.user}
+                domain={ASTA_CONTACT.domain}
                 className="text-asta-red hover:underline"
-              >
-                rac-asta-vorsitz@rheinahrcampus.de
-              </a>
+              />
             </li>
             <li>
               📞{" "}

@@ -15,7 +15,7 @@ describe("Barrierefreiheit", () => {
     ).toBeInTheDocument();
     // Feedback contact is reachable.
     expect(
-      screen.getByText("rac-asta-vorsitz@rheinahrcampus.de"),
+      screen.getByText("rac-asta-vorsitz [at] rheinahrcampus.de"),
     ).toBeInTheDocument();
   });
 });

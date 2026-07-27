@@ -14,6 +14,7 @@ import { Mail, Users } from "lucide-react";
 import type { PageSectionDTO } from "../../../../shared/types";
 import ImageLightbox from "@/components/ImageLightbox";
 import RichText from "@/components/RichText";
+import ObfuscatedMailLink from "@/components/ObfuscatedMailLink";
 
 interface ReferatCardProps {
   section: PageSectionDTO;
@@ -68,14 +69,14 @@ export default function ReferatCard({ section }: ReferatCardProps) {
           <p className="text-lg font-bold leading-tight">{section.caption}</p>
         )}
         {section.email && (
-          <a
-            href={`mailto:${section.email}`}
-            aria-label={`E-Mail an ${section.caption ?? section.subtitle ?? "Referat"}`}
+          <ObfuscatedMailLink
+            email={section.email}
+            ariaLabel={`E-Mail an ${section.caption ?? section.subtitle ?? "Referat"}`}
             className="inline-flex items-center justify-center gap-1 mt-3 text-sm text-gray-600 hover:text-asta-red"
           >
             <Mail className="h-4 w-4" />
             E-Mail
-          </a>
+          </ObfuscatedMailLink>
         )}
       </div>
 

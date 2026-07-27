@@ -16,6 +16,7 @@ import {
   googleCalendarUrl,
   icsFilename,
 } from "@/lib/calendar";
+import ObfuscatedMailLink from "@/components/ObfuscatedMailLink";
 
 interface EventDialogProps {
   /** The event to show, or null when closed. */
@@ -145,14 +146,13 @@ export default function EventDialog({ event, onClose }: EventDialogProps) {
                 />
               )}
               {event.registrationEmail && (
-                <a
-                  href={`mailto:${event.registrationEmail}?subject=${encodeURIComponent(
-                    `${event.title} Anmeldung`,
-                  )}`}
+                <ObfuscatedMailLink
+                  email={event.registrationEmail}
+                  subject={`${event.title} Anmeldung`}
                   className="mt-3 block w-full text-center rounded-lg bg-asta-red text-white font-semibold px-4 py-2.5 hover:bg-asta-red-dark"
                 >
                   Sich anmelden
-                </a>
+                </ObfuscatedMailLink>
               )}
             </div>
           )}

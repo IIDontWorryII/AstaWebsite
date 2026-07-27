@@ -31,7 +31,6 @@ type SeedSection = {
 type SeedPage = {
   slug: string;
   title: string;
-  intro?: string;
   sections: SeedSection[];
 };
 
@@ -331,11 +330,10 @@ export async function seedPages(prisma: PrismaClient): Promise<number> {
   for (const pageData of PAGES) {
     const page = await prisma.page.upsert({
       where: { slug: pageData.slug },
-      update: { title: pageData.title, intro: pageData.intro ?? null },
+      update: { title: pageData.title },
       create: {
         slug: pageData.slug,
         title: pageData.title,
-        intro: pageData.intro ?? null,
       },
     });
 

@@ -33,3 +33,5 @@ server/uploads/
 
 # curl/Postman session cookies from local API smoke tests
 cookies.txt
+
+/docs

@@ -8,11 +8,12 @@
 //
 // The gremium is a select (dropdown) so admins can't typo arbitrary
 // values — only the gremien that have a public protocol section get
-// listed. To add a new gremium, extend GREMIUM_OPTIONS below.
+// listed. To add a new gremium, extend the shared GREMIEN list in
+// shared/types.ts (and the Prisma `Gremium` enum + a migration).
 
 import { useRef, useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
-import type { ProtocolDTO } from "../../../../shared/types";
+import { GREMIEN, type ProtocolDTO, type Gremium } from "../../../../shared/types";
 import {
   createProtocol,
   updateProtocol,
@@ -24,17 +25,6 @@ interface ProtocolFormProps {
   /** When set, the form is in edit mode and pre-fills from this protocol. */
   protocol?: ProtocolDTO;
 }
-
-/**
- * Allowed gremium values. Must match the gremium strings that the
- * GremiumProtocols component fetches with — currently ASTA and STUPA
- * are the two Gremien pages with a Protokolle section. Fachschaft
- * subpages will add more once those pages exist.
- */
-const GREMIUM_OPTIONS = [
-  { value: "ASTA", label: "AStA" },
-  { value: "STUPA", label: "StuPa" },
-] as const;
 
 // ─── Date helpers ──────────────────────────────────────────────────────
 //
@@ -60,8 +50,8 @@ export default function ProtocolForm({ protocol }: ProtocolFormProps) {
   const navigate = useNavigate();
   const isEdit = protocol !== undefined;
 
-  const [gremium, setGremium] = useState<string>(
-    protocol?.gremium ?? GREMIUM_OPTIONS[0].value,
+  const [gremium, setGremium] = useState<Gremium>(
+    protocol?.gremium ?? GREMIEN[0].value,
   );
   const [title, setTitle] = useState(protocol?.title ?? "");
   const [description, setDescription] = useState(protocol?.description ?? "");
@@ -138,10 +128,10 @@ export default function ProtocolForm({ protocol }: ProtocolFormProps) {
             id="gremium"
             required
             value={gremium}
-            onChange={(e) => setGremium(e.target.value)}
+            onChange={(e) => setGremium(e.target.value as Gremium)}
             className="w-full border border-gray-300 rounded px-3 py-2 bg-white"
           >
-            {GREMIUM_OPTIONS.map((opt) => (
+            {GREMIEN.map((opt) => (
               <option key={opt.value} value={opt.value}>
                 {opt.label}
               </option>

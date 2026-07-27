@@ -10,6 +10,9 @@
 //
 // ⚠️ Have the AStA confirm the wording + date before launch.
 
+import ObfuscatedMailLink from "@/components/ObfuscatedMailLink";
+import { ASTA_CONTACT } from "@/lib/contact";
+
 const STAND = "Juli 2026";
 
 export default function Barrierefreiheit() {
@@ -63,12 +66,11 @@ export default function Barrierefreiheit() {
         AStA Remagen
         <br />
         E-Mail:{" "}
-        <a
-          href="mailto:rac-asta-vorsitz@rheinahrcampus.de"
+        <ObfuscatedMailLink
+          user={ASTA_CONTACT.user}
+          domain={ASTA_CONTACT.domain}
           className="text-asta-red hover:underline"
-        >
-          rac-asta-vorsitz@rheinahrcampus.de
-        </a>
+        />
       </p>
     </section>
   );

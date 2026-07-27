@@ -4,7 +4,7 @@
 // gallery carousel). Content comes from the page-CMS "baracke" slug; the
 // contact details are static (rarely change).
 
-import { useEffect, useState, type ComponentType } from "react";
+import { useEffect, useState, type ComponentType, type ReactNode } from "react";
 import { Clock, Mail, MapPin, Phone } from "lucide-react";
 import type { PageDTO } from "../../../shared/types";
 import { fetchPage } from "@/lib/pages";
@@ -16,9 +16,11 @@ import RichText from "@/components/RichText";
 import MenuCarousel from "@/components/MenuCarousel";
 import GalleryCarousel from "@/components/GalleryCarousel";
 import UpcomingEvents from "@/components/UpcomingEvents";
+import ObfuscatedMailLink from "@/components/ObfuscatedMailLink";
 
 const LOCATION = "Maisons-Laffitte-Platz 4, 53424 Remagen";
-const EMAIL = "rac-asta-baracke@rheinahrcampus.de";
+const EMAIL_USER = "rac-asta-baracke";
+const EMAIL_DOMAIN = "rheinahrcampus.de";
 const PHONE_DISPLAY = "+49 176 86665388";
 const PHONE_HREF = "tel:+4917686665388";
 
@@ -31,7 +33,7 @@ function ContactItem({
 }: {
   icon: ComponentType<{ className?: string }>;
   label: string;
-  value: string;
+  value: ReactNode;
   href?: string;
   /** Render `value` as rich-text HTML (used for the editor-managed hours). */
   html?: boolean;
@@ -47,7 +49,7 @@ function ContactItem({
         </p>
         {html ? (
           <RichText
-            html={value}
+            html={value as string}
             className="prose-sm prose-p:my-0 text-gray-800"
           />
         ) : (
@@ -136,8 +138,13 @@ export default function Baracke() {
               <ContactItem
                 icon={Mail}
                 label="E-Mail"
-                value={EMAIL}
-                href={`mailto:${EMAIL}`}
+                value={
+                  <ObfuscatedMailLink
+                    user={EMAIL_USER}
+                    domain={EMAIL_DOMAIN}
+                    className="hover:text-asta-red"
+                  />
+                }
               />
               <ContactItem
                 icon={Phone}

@@ -4,6 +4,8 @@ import { Link } from "react-router-dom";
 import { Play } from "lucide-react";
 import { ABOUT_VIDEO_URL, SOCIAL_LINKS } from "@/lib/socials";
 import { useAuth } from "@/auth/AuthContext";
+import ObfuscatedMailLink from "@/components/ObfuscatedMailLink";
+import { ASTA_CONTACT } from "@/lib/contact";
 
 export default function Footer() {
   const { user, loading } = useAuth();
@@ -36,12 +38,12 @@ export default function Footer() {
           <p className="text-sm opacity-90">der Hochschule Koblenz</p>
           <ul className="mt-4 space-y-2 text-sm">
             <li>
-              <a
-                href="mailto:rac-asta-vorsitz@rheinahrcampus.de"
+              <span aria-hidden>📧 </span>
+              <ObfuscatedMailLink
+                user={ASTA_CONTACT.user}
+                domain={ASTA_CONTACT.domain}
                 className="hover:underline"
-              >
-                📧 rac-asta-vorsitz@rheinahrcampus.de
-              </a>
+              />
             </li>
             <li>
               <address>📍 Joseph-Rovan-Allee 2, 53424 Remagen</address>

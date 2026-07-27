@@ -19,8 +19,8 @@ jobs:
     name: Client (build + tests)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 24
           cache: npm
@@ -69,8 +69,8 @@ jobs:
       # aren't needed here.
 
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 24
           cache: npm
@@ -100,20 +100,27 @@ jobs:
         working-directory: server
         run: npm run test:run
 
-  # Continuous Deployment: once client + server pass, SSH into the VPS and run
-  # deploy.sh (git pull → build → migrate → restart). Only on a push to main —
-  # never on pull requests. Needs three repo secrets: VPS_HOST, VPS_USER,
-  # VPS_SSH_KEY.
-  deploy:
-    name: Deploy to VPS
-    needs: [client, server]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    steps:
-      - name: SSH deploy
-        uses: appleboy/ssh-action@v1.2.2
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          script: /var/www/asta/deploy.sh
+  # ---------------------------------------------------------------------------
+  # Continuous Deployment to the VPS — DISABLED (Jul 2026)
+  #
+  # This job SSHed into the netcup VPS and ran deploy.sh (git pull → build →
+  # migrate → restart) on every push to main. The VPS was wiped/reinstalled by
+  # the server owner and we no longer have access, so the job could only fail
+  # and was turning every push to main red. It is kept here (commented out) as
+  # a record of how auto-deploy worked and can be re-enabled when a server is
+  # available again: uncomment the block below and set the VPS_HOST / VPS_USER /
+  # VPS_SSH_KEY repo secrets to point at the new host.
+  #
+  # deploy:
+  #   name: Deploy to VPS
+  #   needs: [client, server]
+  #   if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: SSH deploy
+  #       uses: appleboy/ssh-action@v1.2.2
+  #       with:
+  #         host: ${{ secrets.VPS_HOST }}
+  #         username: ${{ secrets.VPS_USER }}
+  #         key: ${{ secrets.VPS_SSH_KEY }}
+  #         script: /var/www/asta/deploy.sh

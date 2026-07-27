@@ -12,7 +12,7 @@ describe("Impressum", () => {
     ).toBeInTheDocument();
     expect(screen.getByText(/Angaben gemäß § 5 DDG/)).toBeInTheDocument();
     expect(
-      screen.getByText("rac-asta-vorsitz@rheinahrcampus.de"),
+      screen.getByText("rac-asta-vorsitz [at] rheinahrcampus.de"),
     ).toBeInTheDocument();
   });
 });

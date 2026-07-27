@@ -8,6 +8,9 @@
 //   - whether a supervisory authority (Aufsichtsbehörde) must be named,
 //     since the Studierendenschaft is a public-law body.
 
+import ObfuscatedMailLink from "@/components/ObfuscatedMailLink";
+import { ASTA_CONTACT } from "@/lib/contact";
+
 // Current chair — update when the Vorsitz changes.
 const VERTRETEN_DURCH = "Alpay Aydin";
 
@@ -43,12 +46,11 @@ export default function Impressum() {
           </a>
           <br />
           E-Mail:{" "}
-          <a
-            href="mailto:rac-asta-vorsitz@rheinahrcampus.de"
+          <ObfuscatedMailLink
+            user={ASTA_CONTACT.user}
+            domain={ASTA_CONTACT.domain}
             className="text-asta-red hover:underline"
-          >
-            rac-asta-vorsitz@rheinahrcampus.de
-          </a>
+          />
         </p>
       </div>
 

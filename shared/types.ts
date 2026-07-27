@@ -71,9 +71,22 @@ export interface EventDTO {
   updatedAt: string;
 }
 
+/**
+ * The student-body organs that have a public Protokolle section. `value` is
+ * stored in the DB (as the Prisma `Gremium` enum) and used for filtering;
+ * `label` is shown in the UI. Adding one here must be matched by a new value
+ * in the Prisma `Gremium` enum (+ migration).
+ */
+export const GREMIEN = [
+  { value: "ASTA", label: "AStA" },
+  { value: "STUPA", label: "StuPa" },
+] as const;
+
+export type Gremium = (typeof GREMIEN)[number]["value"];
+
 export interface ProtocolDTO {
   id: string;
-  gremium: string;
+  gremium: Gremium;
   title: string;
   /** Optional short summary of what the meeting covered. */
   description: string | null;
@@ -138,7 +151,6 @@ export interface PageDTO {
   id: string;
   slug: string;
   title: string;
-  intro: string | null;
   /** Hero background image URL, or null to use the page's bundled default. */
   heroImageUrl: string | null;
   sections: PageSectionDTO[];
